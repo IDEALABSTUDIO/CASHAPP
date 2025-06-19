@@ -7,20 +7,37 @@
   <style>
     /* Reset e stili globali */
     * { box-sizing: border-box; }
-    body { font-family: sans-serif; margin: 0; background: #111; color: #fff; }
+    html, body { 
+      margin: 0; 
+      padding: 0; 
+      height: 100%; /* Assicura che html e body occupino l'intera altezza del viewport */
+      overflow: hidden; /* Impedisce lo scorrimento della pagina principale */
+      font-family: sans-serif; 
+      background: #111; 
+      color: #fff; 
+    }
     
     /* Layout principale del contenitore */
-    .container { display: flex; height: 100vh; }
+    .container { 
+      display: flex; 
+      height: 100vh; /* Utilizza l'altezza del viewport */
+      flex-direction: row; /* Default per schermi grandi */
+      overflow: hidden; /* Impedisce lo scorrimento del contenitore principale */
+    }
     
     /* Stili per le colonne sinistra, centro e destra */
     .left, .center, .right {
       background: #1e1e1e; /* Colore di sfondo scuro per i pannelli laterali */
       display: flex;
       flex-direction: column;
+      padding: 1rem;
+      flex-shrink: 0; /* Impedisce che si riducano troppo */
     }
     
     .left {
-      width: 240px; /* Larghezza fissa per il pannello categorie */
+      flex-basis: 240px; /* Dimensione preferita */
+      min-width: 180px; /* Larghezza minima */
+      max-width: 25%; /* Max percentuale su schermi molto grandi */
       justify-content: flex-start; /* Allinea le categorie in alto */
     }
     
@@ -30,40 +47,43 @@
       padding: 1rem; /* Padding per il contenuto centrale */
       display: flex; /* Rende il centro un contenitore flex */
       flex-direction: column; /* Impila gli elementi verticalmente */
+      overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
     }
     
     .right {
-      width: 200px; /* Larghezza fissa per il pannello dei pulsanti di azione */
+      flex-basis: 200px; /* Dimensione preferita */
+      min-width: 150px; /* Larghezza minima */
+      max-width: 20%; /* Max percentuale su schermi molto grandi */
       justify-content: center; /* Centra i pulsanti verticalmente */
       align-items: stretch; /* Estende i pulsanti per riempire la larghezza */
-      gap: 1.5rem; /* Spazio tra i pulsanti */
-      padding: 1rem; /* Padding per il pannello destro */
+      gap: 1rem; /* Spazio tra i pulsanti leggermente ridotto */
+      overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
     }
     
     /* Stili per le categorie nel pannello sinistro */
     .categories {
       display: flex;
-      flex-direction: column;
+      flex-direction: column; /* Default verticale */
       justify-content: flex-start;
       align-items: stretch;
       gap: 0.5rem; /* Spazio tra i bottoni categoria */
-      padding: 1rem;
-      height: 100%;
+      height: 100%; /* Occupa l'altezza disponibile del contenitore .left */
+      overflow-y: auto; /* Permette lo scorrimento interno se le categorie non si adattano */
     }
     
     .category {
-      flex: 1; /* Le categorie si espandono per riempire lo spazio */
+      height: auto; /* L'altezza è determinata dal contenuto e dal padding */
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 40px;
-      padding: 1rem;
+      min-height: 35px; /* Altezza minima leggermente ridotta */
+      padding: 0.8rem; /* Padding leggermente ridotto per più compattezza */
       background: #333; /* Sfondo scuro per il bottone categoria */
       border: none;
       cursor: pointer;
       border-radius: 4px; /* Bordi arrotondati */
       text-align: center;
-      font-size: 1.2rem;
+      font-size: 1.1rem; /* Font leggermente ridotto */
       color: white; /* Testo bianco */
       transition: background 0.3s ease; /* Transizione per l'hover/active */
     }
@@ -101,23 +121,23 @@
     
     .keypad input {
       grid-column: span 3; /* L'input si estende per 3 colonne */
-      font-size: 6rem;
+      font-size: 4rem; /* Dimensione del font ridotta per adattarsi meglio */
       text-align: right;
       padding: 0.5rem;
       background: #000; /* Sfondo nero per l'input */
       border: none;
       color: #fff; /* Testo bianco */
       width: 100%;
-      height: 12rem;
+      height: 8rem; /* Altezza ridotta per adattarsi meglio */
       border-radius: 4px; /* Bordi arrotondati */
     }
     
     .key {
-      height: 100px;
+      height: 80px; /* Altezza ridotta per i tasti principali */
       background: #222; /* Sfondo scuro per i tasti */
       border: none;
       cursor: pointer;
-      font-size: 1.8rem;
+      font-size: 1.6rem; /* Font leggermente ridotto */
       border-radius: 4px;
       display: flex;
       align-items: center;
@@ -139,9 +159,9 @@
 
     /* Stili per i pulsanti di registrazione (CASH, POS, USCITE) */
     .right button {
-      flex: 1; /* Si espandono per riempire lo spazio disponibile */
-      padding: 2rem;
-      font-size: 1.5rem;
+      height: auto; /* Altezza determinata da padding e contenuto */
+      padding: 1.2rem; /* Padding più compatto */
+      font-size: 1.3rem; /* Font leggermente ridotto */
       font-weight: bold;
       border: none;
       border-radius: 8px; /* Bordi arrotondati */
@@ -150,7 +170,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100px;
+      min-height: 60px; /* Altezza minima per mantenere la cliccabilità */
       transition: background 0.3s ease, transform 0.2s ease; /* Transizioni */
     }
 
@@ -169,13 +189,14 @@
 
     /* Nuovo stile per il pulsante Visualizza Storico */
     .history-button {
-      flex: 0.0125; /* Ridotto alla metà (0.025 / 2 = 0.0125) */
+      height: 40px; /* Altezza fissa più compatta */
+      padding: 0.3rem; /* Padding ridotto */
       background: #ffc107; /* Giallo */
       color: #000; /* Testo nero */
-      font-size: 1.0rem; /* Mantenuto o leggermente adattato per l'icona */
-      padding: 0.3rem; /* Padding ridotto per supportare la riduzione dell'altezza */
+      font-size: 1.5rem; /* Dimensione dell'icona per visibilità */
       border-radius: 8px;
-      line-height: 1; /* Assicura che l'altezza sia determinata principalmente da flex */
+      line-height: 1; /* Assicura che l'icona sia centrata verticalmente */
+      margin-top: auto; /* Lo spinge verso il basso all'interno del contenitore .right */
     }
     .history-button:hover {
         background: #e0a800; /* Giallo più scuro all'hover */
@@ -363,6 +384,144 @@
         color: #ff6347; /* Colore per i messaggi di errore PIN */
         font-size: 1.1em;
         text-align: center;
+    }
+
+    /* Media Queries per la responsività */
+    /* Per schermi fino a 1200px (ad esempio, tablet in landscape, laptop più piccoli) */
+    @media (max-width: 1200px) {
+      .left {
+        flex-basis: 180px; /* Larghezza ridotta */
+        min-width: 140px;
+      }
+      .right {
+        flex-basis: 160px; /* Larghezza ridotta */
+        min-width: 120px;
+      }
+      .category {
+        font-size: 1rem; /* Font ancora più piccolo */
+        padding: 0.7rem; /* Padding ridotto */
+        min-height: 30px;
+      }
+      .keypad input {
+        font-size: 3.5rem; /* Font del display ridotto */
+        height: 7rem;
+      }
+      .key {
+        height: 70px; /* Altezza tasti ridotta */
+        font-size: 1.4rem;
+      }
+      .right button {
+        padding: 1rem; /* Padding ridotto */
+        font-size: 1.1rem; /* Font ridotto */
+        min-height: 50px;
+      }
+      .history-button {
+        height: 35px; /* Altezza del pulsante storico ridotta */
+        font-size: 1.3rem; /* Dimensione icona leggermente ridotta */
+      }
+      #note {
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Per schermi fino a 768px (ad esempio, tablet in portrait, smartphone) */
+    @media (max-width: 768px) {
+      body {
+        font-size: 13px; /* Riduci la dimensione del font base per schermi più piccoli */
+      }
+      .container {
+        flex-direction: column; /* Impila le colonne verticalmente */
+        height: auto; /* Permetti all'altezza di adattarsi al contenuto */
+      }
+      .left, .center, .right {
+        width: 100%; /* Ogni colonna occupa l'intera larghezza */
+        padding: 0.5rem;
+        flex-basis: auto; /* Resetta flex-basis */
+        min-width: unset; /* Rimuovi min-width fisso */
+        max-width: 100%; /* Occupa tutta la larghezza */
+      }
+      .right {
+        flex-direction: row; /* I pulsanti CASH, POS, USCITE si allineano orizzontalmente */
+        flex-wrap: wrap; /* Permetti ai pulsanti di andare a capo */
+        justify-content: space-around; /* Spazia i pulsanti */
+        gap: 0.6rem; /* Spazio ridotto tra i pulsanti */
+      }
+      .right button {
+        flex: 1 1 48%; /* Due pulsanti per riga con un po' di spazio */
+        padding: 0.8rem;
+        font-size: 1rem;
+        min-height: 50px;
+      }
+      .history-button {
+        flex-basis: 100%; /* Il pulsante storico occupa la riga intera */
+        font-size: 1.1rem;
+        height: 30px;
+        padding: 0.2rem;
+        margin-top: 0.5rem;
+      }
+      
+      .categories {
+        flex-direction: row; /* Le categorie si allineano orizzontalmente */
+        flex-wrap: wrap; /* Permetti alle categorie di andare a capo */
+        justify-content: center;
+        gap: 0.3rem; /* Spazio ridotto tra le categorie */
+        height: auto; /* Adatta altezza al contenuto */
+      }
+      .category {
+        flex: 1 1 48%; /* Due categorie per riga */
+        width: auto;
+        padding: 0.5rem 0.8rem;
+        min-height: unset;
+        font-size: 0.85rem;
+      }
+
+      .keypad input {
+        font-size: 3rem; /* Riduci la dimensione del display del tastierino */
+        height: 6rem;
+      }
+      .key {
+        height: 60px; /* Riduci l'altezza dei tasti del tastierino principale */
+        font-size: 1.3rem;
+      }
+      #note {
+        font-size: 0.8rem;
+      }
+
+      #pin-keypad {
+        width: 95%; /* Lascia un piccolo margine sui lati */
+        gap: 5px; /* Riduci lo spazio tra i tasti del PIN */
+      }
+      #pin-keypad .key {
+        height: 55px; /* Riduci altezza dei tasti PIN */
+        font-size: 1.6rem;
+      }
+      .pin-digit {
+        width: 28px;
+        height: 36px;
+        font-size: 1.4em;
+      }
+    }
+
+    /* Per schermi molto piccoli (ad esempio, smartphone stretti) */
+    @media (max-width: 480px) {
+      .right button {
+        max-width: 100%; /* Un pulsante per riga per schermi molto stretti */
+      }
+      .category {
+        max-width: 100%; /* Una categoria per riga per schermi molto stretti */
+      }
+      .keypad input {
+        font-size: 2.5rem;
+        height: 5rem;
+      }
+      .key {
+        height: 45px;
+        font-size: 1.1rem;
+      }
+      #pin-keypad .key {
+        height: 45px;
+        font-size: 1.4rem;
+      }
     }
   </style>
 </head>
