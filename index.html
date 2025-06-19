@@ -10,17 +10,26 @@
     body { font-family: sans-serif; margin: 0; background: #111; color: #fff; }
     
     /* Layout principale del contenitore */
-    .container { display: flex; height: 100vh; }
+    .container { 
+      display: flex; 
+      height: 100vh; 
+      flex-direction: row; /* Default per schermi grandi */
+    }
     
     /* Stili per le colonne sinistra, centro e destra */
     .left, .center, .right {
       background: #1e1e1e; /* Colore di sfondo scuro per i pannelli laterali */
       display: flex;
       flex-direction: column;
+      padding: 1rem;
     }
     
     .left {
-      width: 240px; /* Larghezza fissa per il pannello categorie */
+      /* Larghezza flessibile per schermi più grandi, poi diventa 100% */
+      flex-basis: 240px; /* Dimensione preferita */
+      flex-shrink: 0; /* Non si riduce più di tanto */
+      min-width: 180px; /* Larghezza minima per evitare che diventi troppo piccolo */
+      max-width: 25%; /* Max percentuale su schermi molto grandi */
       justify-content: flex-start; /* Allinea le categorie in alto */
     }
     
@@ -33,26 +42,28 @@
     }
     
     .right {
-      width: 200px; /* Larghezza fissa per il pannello dei pulsanti di azione */
+      /* Larghezza flessibile per schermi più grandi, poi diventa 100% */
+      flex-basis: 200px; /* Dimensione preferita */
+      flex-shrink: 0; /* Non si riduce più di tanto */
+      min-width: 150px; /* Larghezza minima */
+      max-width: 20%; /* Max percentuale su schermi molto grandi */
       justify-content: center; /* Centra i pulsanti verticalmente */
       align-items: stretch; /* Estende i pulsanti per riempire la larghezza */
       gap: 1.5rem; /* Spazio tra i pulsanti */
-      padding: 1rem; /* Padding per il pannello destro */
     }
     
     /* Stili per le categorie nel pannello sinistro */
     .categories {
       display: flex;
-      flex-direction: column;
+      flex-direction: column; /* Default verticale */
       justify-content: flex-start;
       align-items: stretch;
       gap: 0.5rem; /* Spazio tra i bottoni categoria */
-      padding: 1rem;
       height: 100%;
     }
     
     .category {
-      flex: 1; /* Le categorie si espandono per riempire lo spazio */
+      flex: 1; /* Le categorie si espandono per riempire lo spazio (verticalmente) */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -353,7 +364,6 @@
 
     #pin-enter-button {
         background: #2ecc71; /* Già verde */
-        /* Rimosso grid-column: span 2; */
     }
     #pin-enter-button:hover {
         background: #27ae60;
@@ -364,6 +374,139 @@
         color: #ff6347; /* Colore per i messaggi di errore PIN */
         font-size: 1.1em;
         text-align: center;
+    }
+
+    /* Media Queries per la responsività */
+    /* Per schermi fino a 1200px (ad esempio, tablet in landscape, laptop più piccoli) */
+    @media (max-width: 1200px) {
+      .left {
+        flex-basis: 200px;
+        min-width: 150px;
+      }
+      .right {
+        flex-basis: 180px;
+        min-width: 120px;
+      }
+      .category {
+        font-size: 1.1rem;
+        padding: 0.8rem;
+      }
+      .keypad input {
+        font-size: 5rem;
+        height: 10rem;
+      }
+      .key {
+        height: 90px;
+        font-size: 1.6rem;
+      }
+      .right button {
+        padding: 1.5rem;
+        font-size: 1.3rem;
+      }
+    }
+
+    /* Per schermi fino a 768px (ad esempio, tablet in portrait, smartphone) */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px; /* Riduci la dimensione del font base per schermi più piccoli */
+      }
+      .container {
+        flex-direction: column; /* Impila le colonne verticalmente */
+        height: auto; /* Permetti all'altezza di adattarsi al contenuto */
+      }
+      .left, .center, .right {
+        width: 100%; /* Ogni colonna occupa l'intera larghezza */
+        padding: 0.5rem;
+      }
+      .left {
+        min-width: unset; /* Rimuovi min-width fisso */
+        max-width: 100%; /* Occupa tutta la larghezza */
+      }
+      .right {
+        min-width: unset; /* Rimuovi min-width fisso */
+        max-width: 100%; /* Occupa tutta la larghezza */
+        flex-direction: row; /* I pulsanti CASH, POS, USCITE si allineano orizzontalmente */
+        flex-wrap: wrap; /* Permetti ai pulsanti di andare a capo */
+        justify-content: space-around; /* Spazia i pulsanti */
+        gap: 0.8rem;
+      }
+      .right button {
+        flex: 1 1 auto; /* Permetti ai pulsanti di crescere e ridursi */
+        max-width: 48%; /* Due pulsanti per riga con un po' di spazio */
+        padding: 1rem;
+        font-size: 1.1rem;
+        min-height: 60px;
+      }
+      .history-button {
+        flex-basis: 100%; /* Il pulsante storico occupa la riga intera */
+        font-size: 0.9rem;
+        padding: 0.2rem;
+        margin-top: 0.5rem;
+      }
+      
+      .categories {
+        flex-direction: row; /* Le categorie si allineano orizzontalmente */
+        flex-wrap: wrap; /* Permetti alle categorie di andare a capo */
+        justify-content: center;
+        gap: 0.4rem;
+        height: auto; /* Adatta altezza al contenuto */
+      }
+      .category {
+        flex: 1 1 auto; /* Le categorie si adattano e si avvolgono */
+        width: auto;
+        padding: 0.6rem 1rem;
+        min-height: unset;
+        font-size: 0.9rem;
+        max-width: 48%; /* Due categorie per riga */
+      }
+
+      .keypad input {
+        font-size: 4rem; /* Riduci la dimensione del display del tastierino */
+        height: 8rem;
+      }
+      .key {
+        height: 70px; /* Riduci l'altezza dei tasti del tastierino principale */
+        font-size: 1.5rem;
+      }
+      #note {
+        font-size: 0.9rem;
+      }
+
+      #pin-keypad {
+        width: 95%; /* Lascia un piccolo margine sui lati */
+        gap: 5px; /* Riduci lo spazio tra i tasti del PIN */
+      }
+      #pin-keypad .key {
+        height: 60px; /* Riduci altezza dei tasti PIN */
+        font-size: 1.8rem;
+      }
+      .pin-digit {
+        width: 30px;
+        height: 40px;
+        font-size: 1.5em;
+      }
+    }
+
+    /* Per schermi molto piccoli (ad esempio, smartphone stretti) */
+    @media (max-width: 480px) {
+      .right button {
+        max-width: 100%; /* Un pulsante per riga per schermi molto stretti */
+      }
+      .category {
+        max-width: 100%; /* Una categoria per riga per schermi molto stretti */
+      }
+      .keypad input {
+        font-size: 3rem;
+        height: 6rem;
+      }
+      .key {
+        height: 50px;
+        font-size: 1.2rem;
+      }
+      #pin-keypad .key {
+        height: 50px;
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
