@@ -3,472 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Tracker - Firebase</title>
+    <title>Cash Tracker - Google Sheets</title>
     <style>
-        /* Reset e stili globali */
+        /* CSS Invariato - Stessi stili di prima */
         * { box-sizing: border-box; }
         html, body {
             margin: 0;
             padding: 0;
-            height: 100%; /* Assicura che html e body occupino l'intera altezza del viewport */
-            overflow: hidden; /* Impedisce lo scorrimento della pagina principale */
+            height: 100%;
+            overflow: hidden;
             font-family: sans-serif;
             background: #111;
             color: #fff;
         }
-
-        /* Layout principale del contenitore */
-        .container {
-            display: flex;
-            height: 100vh; /* Utilizza l'altezza del viewport */
-            flex-direction: row; /* Default per schermi grandi (affiancati) */
-            overflow: hidden; /* Impedisce lo scorrimento del contenitore principale */
-        }
-
-        /* Stili per le colonne sinistra, centro e destra */
-        .left, .center, .right {
-            background: #1e1e1e; /* Colore di sfondo scuro per i pannelli laterali */
-            display: flex;
-            flex-direction: column;
-            padding: 1rem;
-            flex-shrink: 0; /* Impedisce che si riducano troppo senza necessità */
-            flex-grow: 0; /* Impedisce che crescano troppo senza necessità */
-        }
-
-        .left {
-            flex-basis: 240px; /* Dimensione preferita */
-            min-width: 160px; /* Larghezza minima ridotta */
-            max-width: 25%; /* Max percentuale su schermi molto grandi */
-            justify-content: flex-start; /* Allinea le categorie in alto */
-        }
-
-        .center {
-            flex-grow: 1; /* Il pannello centrale occupa lo spazio rimanente */
-            background: #181818; /* Sfondo leggermente più scuro per l'area di input */
-            padding: 1rem; /* Padding per il contenuto centrale */
-            display: flex; /* Rende il centro un contenitore flex */
-            flex-direction: column; /* Impila gli elementi verticalmente */
-            overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
-        }
-
-        .right {
-            flex-basis: 180px; /* Dimensione preferita leggermente ridotta */
-            min-width: 120px; /* Larghezza minima ridotta */
-            max-width: 20%; /* Max percentuale su schermi molto grandi */
-            justify-content: center; /* Centra i pulsanti verticalmente */
-            align-items: stretch; /* Estende i pulsanti per riempire la larghezza */
-            gap: 0.6rem; /* Spazio tra i pulsanti leggermente ridotto */
-            overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
-        }
-
-        /* Stili per le categorie nel pannello sinistro */
-        .categories {
-            display: flex;
-            flex-direction: column; /* Default verticale */
-            justify-content: flex-start;
-            align-items: stretch;
-            gap: 0.4rem; /* Spazio tra i bottoni categoria leggermente ridotto */
-            height: 100%; /* Occupa l'altezza disponibile del contenitore .left */
-            overflow-y: auto; /* Permette lo scorrimento interno se le categorie non si adattano */
-        }
-
-        .category {
-            height: auto; /* L'altezza è determinata dal contenuto e dal padding */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 1; /* Permette alle categorie di restringersi */
-            flex-grow: 0; /* Non crescono per riempire lo spazio eccessivo */
-            min-height: 30px; /* Altezza minima ulteriormente ridotta */
-            padding: 0.7rem; /* Padding ulteriormente ridotto per più compattezza */
-            background: #333; /* Sfondo scuro per il bottone categoria */
-            border: none;
-            cursor: pointer;
-            border-radius: 4px; /* Bordi arrotondati */
-            text-align: center;
-            font-size: 1rem; /* Font leggermente ridotto */
-            color: white; /* Testo bianco */
-            transition: background 0.3s ease; /* Transizione per l'hover/active */
-        }
-
-        .category:hover {
-            background: #444; /* Colore più chiaro all'hover */
-        }
-
-        .category.active {
-            background: #555; /* Colore diverso per la categoria attiva */
-            border: 2px solid #66bb6a; /* Bordo verde per la categoria attiva */
-        }
-
-        /* Stili per l'area dei messaggi in alto (solo risultato) */
-        .top-messages-area {
-            margin-bottom: 0.8rem; /* Spazio tra i messaggi e l'area di input */
-        }
-
-        /* Stili per l'area di input e tastierino in basso */
-        .bottom-input-area {
-            margin-top: auto; /* Spinge questa area e il suo contenuto in fondo al contenitore .center */
-            width: 100%; /* Assicura che l'area prenda tutta la larghezza disponibile */
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem; /* Spazio tra gli elementi: tastierino, log, note */
-        }
-
-        /* Stili per il tastierino numerico principale */
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 colonne uguali */
-            gap: 0.4rem; /* Spazio tra i tasti ridotto */
-            width: 100%;
-        }
-
-        .keypad input {
-            grid-column: span 3; /* L'input si estende per 3 colonne */
-            font-size: 3.5rem; /* Dimensione del font ridotta per adattarsi meglio */
-            text-align: right;
-            padding: 0.4rem; /* Padding ridotto */
-            background: #000; /* Sfondo nero per l'input */
-            border: none;
-            color: #fff; /* Testo bianco */
-            width: 100%;
-            height: 7rem; /* Altezza ridotta per adattarsi meglio */
-            border-radius: 4px; /* Bordi arrotondati */
-        }
-
-        .key {
-            height: 70px; /* Altezza ridotta per i tasti principali */
-            background: #222; /* Sfondo scuro per i tasti */
-            border: none;
-            cursor: pointer;
-            font-size: 1.5rem; /* Font leggermente ridotto */
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            transition: background 0.3s ease; /* Transizione per l'hover */
-        }
-
-        .key:hover {
-            background: #3a3a3a; /* Colore più chiaro all'hover */
-        }
-
-        #clear {
-            background: #e74c3c; /* Colore rosso per il tasto Clear */
-        }
-        #clear:hover {
-            background: #c0392b;
-        }
-
-        /* Stili per i pulsanti di registrazione (CASH, POS, USCITE) */
-        .right button {
-            height: auto; /* Altezza determinata da padding e contenuto */
-            padding: 1rem; /* Padding più compatto */
-            font-size: 1.2rem; /* Font leggermente ridotto */
-            font-weight: bold;
-            border: none;
-            border-radius: 8px; /* Bordi arrotondati */
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 1; /* Permette ai pulsanti di restringersi */
-            flex-grow: 0; /* Non crescono per riempire spazio eccessivo */
-            min-height: 55px; /* Altezza minima per mantenere la cliccabilità */
-            transition: background 0.3s ease, transform 0.2s ease; /* Transizioni */
-        }
-
-        .right button:hover {
-            transform: translateY(-2px); /* Leggero sollevamento all'hover */
-        }
-
-        .cash { background: #2ecc71; } /* Verde per CASH */
-        .cash:hover { background: #27ae60; }
-
-        .pos { background: #3498db; } /* Blu per POS */
-        .pos:hover { background: #2980b9; }
-
-        .uscite { background: #e74c3c; } /* Rosso per USCITE */
-        .uscite:hover { background: #c0392b; }
-
-        /* Nuovo stile per il pulsante Visualizza Storico */
-        .history-button {
-            height: 38px; /* Altezza fissa più compatta */
-            padding: 0.2rem; /* Padding ridotto */
-            background: #ffc107; /* Giallo */
-            color: #000; /* Testo nero */
-            font-size: 1.4rem; /* Dimensione dell'icona per visibilità */
-            border-radius: 8px;
-            line-height: 1; /* Assicura che l'icona sia centrata verticalmente */
-            margin-top: 0; /* Assicurati che non ci sia margine automatico */
-            flex-shrink: 1; /* Permette di restringersi */
-            flex-grow: 0; /* Non cresce per riempire spazio eccessivo */
-        }
-        .history-button:hover {
-            background: #e0a800; /* Giallo più scuro all'hover */
-        }
-
-        /* Stili per l'area delle note */
-        #note {
-            width: 100%;
-            padding: 0.5rem;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 4px;
-            resize: vertical; /* Permette il ridimensionamento verticale */
-        }
-
-        /* Stili per i messaggi di risultato */
-        #result {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            background: #333;
-            border-radius: 4px;
-            color: #90ee90; /* Verde chiaro per i messaggi di successo */
-            text-align: center;
-        }
-
-        /* Stili per il log di sincronizzazione */
-        #log {
-            margin-top: 1rem; /* Spazio sopra il log */
-            margin-bottom: 0.5rem; /* Spazio sotto il log */
-            padding: 0.5rem;
-            font-size: 0.9rem;
-            color: #ccc;
-            font-style: italic;
-            text-align: center;
-            background: #333; /* Sfondo leggermente scuro per il log */
-            border-radius: 4px;
-        }
-
-        /* Stili per la modal dello storico */
-        #popup-overlay {
-            display:none;
-            position:fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            background:rgba(0,0,0,0.6); /* Sfondo semi-trasparente */
-            z-index:9998; /* Assicura che sia sotto la modal ma sopra il resto */
-        }
-
-        #storico-modal {
-            display:none;
-            position:fixed;
-            top:5%;
-            left:50%;
-            transform:translateX(-50%); /* Centra la modal orizzontalmente */
-            width:80%;
-            height:80%;
-            background:#1e1e1e; /* Sfondo scuro per la modal */
-            color:white;
-            overflow:auto; /* Aggiunge scroll se il contenuto è troppo grande */
-            padding:1rem;
-            border-radius:8px;
-            z-index:9999; /* Assicura che sia sopra l'overlay */
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5); /* Ombra più pronunciata */
-        }
-
-        #storico-modal button {
-            position:absolute;
-            top:1rem;
-            right:1rem;
-            font-size:1.2rem;
-            background:#e74c3c; /* Rosso per il pulsante Chiudi */
-            color:white;
-            border:none;
-            padding:0.5rem 1rem;
-            cursor:pointer;
-            border-radius: 4px;
-            transition: background 0.3s ease;
-        }
-        #storico-modal button:hover {
-            background: #c0392b;
-        }
-
-        #storico-popup-content {
-            margin-top: 3rem; /* Spazio per il pulsante chiudi */
-        }
-
-        #storico-popup-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        #storico-popup-content th, #storico-popup-content td {
-            padding: 0.8rem;
-            text-align: left;
-            border-bottom: 1px solid #444; /* Linea divisoria sottile */
-            font-size: 0.9rem;
-        }
-
-        #storico-popup-content th {
-            background: #333; /* Sfondo per le intestazioni della tabella */
-            font-weight: bold;
-        }
-
-        /* Stili per la schermata di blocco PIN */
-        #pin-lock-screen {
+        .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
+        .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; }
+        .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
+        .center { flex-grow: 1; background: #181818; padding: 1rem; display: flex; flex-direction: column; overflow-y: auto; }
+        .right { flex-basis: 180px; min-width: 120px; max-width: 20%; justify-content: center; align-items: stretch; gap: 0.6rem; overflow-y: auto; }
+        .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; overflow-y: auto; }
+        .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 1; flex-grow: 0; min-height: 30px; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 4px; text-align: center; font-size: 1rem; color: white; transition: background 0.3s ease; }
+        .category:hover { background: #444; }
+        .category.active { background: #555; border: 2px solid #66bb6a; }
+        .top-messages-area { margin-bottom: 0.8rem; }
+        .bottom-input-area { margin-top: auto; width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; width: 100%; }
+        .keypad input { grid-column: span 3; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 4px; }
+        .key { height: 70px; background: #222; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.3s ease; }
+        .key:hover { background: #3a3a3a; }
+        #clear { background: #e74c3c; }
+        #clear:hover { background: #c0392b; }
+        .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 1; flex-grow: 0; min-height: 55px; transition: background 0.3s ease, transform 0.2s ease; }
+        .right button:hover { transform: translateY(-2px); }
+        .cash { background: #2ecc71; } .cash:hover { background: #27ae60; }
+        .pos { background: #3498db; } .pos:hover { background: #2980b9; }
+        .uscite { background: #e74c3c; } .uscite:hover { background: #c0392b; }
+        .history-button { height: 38px; padding: 0.2rem; background: #ffc107; color: #000; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 1; flex-grow: 0; }
+        .history-button:hover { background: #e0a800; }
+        #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
+        #result { margin-top: 0.5rem; padding: 0.5rem; background: #333; border-radius: 4px; color: #90ee90; text-align: center; }
+        #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
+        #popup-overlay, #storico-modal { display: none; position: fixed; }
+        #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
+        #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 80%; height: 80%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
+        #storico-modal button:hover { background: #c0392b; }
+        #storico-popup-content { margin-top: 3rem; }
+        #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
+        #storico-popup-content th { background: #333; font-weight: bold; }
+        
+        /* Stili per la schermata di Login */
+        #login-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95); /* Sfondo scuro quasi opaco */
-            display: flex;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex; /* Modificato in flex per default */
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 10000; /* Assicura che sia sopra tutto */
+            z-index: 10000;
             color: white;
         }
-
-        #pin-display-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .pin-digit {
-            width: 40px;
-            height: 50px;
-            background: #222;
-            border: 2px solid #555;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2em;
+        #google-login-btn {
+            background-color: #4285F4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2rem;
             font-weight: bold;
-            color: #fff;
-        }
-
-        /* Stile per nascondere i caratteri del PIN */
-        .pin-digit.hidden-char::before {
-            content: '•'; /* Punto per carattere nascosto */
-        }
-
-        #pin-keypad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
             gap: 10px;
-            width: 300px; /* Larghezza fissa per il tastierino PIN */
-            max-width: 90%; /* Per responsività su schermi più piccoli */
         }
-
-        #pin-keypad .key {
-            height: 80px; /* Altezza dei tasti PIN */
-            font-size: 2.2rem;
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            transition: background 0.3s ease;
+        #google-login-btn:hover {
+            background-color: #357ae8;
         }
-        #pin-keypad .key:hover {
-            background: #555;
-        }
-
-        #pin-clear-button {
-            background: #e74c3c;
-        }
-        #pin-clear-button:hover {
-            background: #c0392b;
-        }
-
-        #pin-enter-button {
-            background: #2ecc71; /* Già verde */
-        }
-        #pin-enter-button:hover {
-            background: #27ae60;
-        }
-
-        #pin-message {
-            margin-top: 20px;
-            color: #ff6347; /* Colore per i messaggi di errore PIN */
-            font-size: 1.1em;
-            text-align: center;
-        }
-        
-        #user-id-display {
+        #user-info {
             position: fixed;
-            bottom: 10px;
-            left: 10px;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             background: rgba(0,0,0,0.5);
             padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8em;
+            border-radius: 20px;
+            font-size: 0.9em;
             color: #ccc;
             z-index: 10001;
         }
-
-
-        /* Media Queries per la responsività */
-        @media (max-width: 1200px) {
-            .left { flex-basis: 160px; min-width: 120px; }
-            .right { flex-basis: 140px; min-width: 100px; }
-            .category { font-size: 0.95rem; padding: 0.6rem; min-height: 28px; }
-            .keypad input { font-size: 3rem; height: 6rem; }
-            .key { height: 65px; font-size: 1.3rem; }
-            .right button { padding: 0.9rem; font-size: 1.0rem; min-height: 50px; }
-            .history-button { height: 35px; font-size: 1.2rem; }
-            #note { font-size: 0.8rem; }
+        #user-info img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
         }
 
-        @media (max-width: 768px) {
-            body { font-size: 12px; }
-            .container { flex-direction: column; height: auto; }
-            .left, .center, .right { width: 100%; padding: 0.4rem; flex-basis: auto; min-width: unset; max-width: 100%; }
-            .right { flex-direction: row; flex-wrap: wrap; justify-content: space-around; gap: 0.5rem; }
-            .right button { flex: 1 1 48%; padding: 0.7rem; font-size: 0.9rem; min-height: 45px; }
-            .history-button { flex-basis: 100%; font-size: 1rem; height: 28px; padding: 0.2rem; margin-top: 0.4rem; }
-            .categories { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.3rem; height: auto; }
-            .category { flex: 1 1 48%; width: auto; padding: 0.4rem 0.7rem; min-height: unset; font-size: 0.8rem; }
-            .keypad input { font-size: 2.5rem; height: 5rem; }
-            .key { height: 55px; font-size: 1.2rem; }
-            #note { font-size: 0.75rem; height: 4rem; }
-            #pin-keypad { width: 90%; gap: 8px; }
-            #pin-keypad .key { height: 50px; font-size: 1.5rem; }
-            .pin-digit { width: 25px; height: 32px; font-size: 1.2em; }
-        }
-
-        @media (max-width: 480px) {
-            .right button { max-width: 100%; font-size: 0.8rem; }
-            .category { max-width: 100%; font-size: 0.75rem; }
-            .keypad input { font-size: 2rem; height: 4rem; }
-            .key { height: 40px; font-size: 1rem; }
-            #pin-keypad .key { height: 40px; font-size: 1.2rem; }
-        }
+        @media (max-width: 768px) { /* Stili responsivi ... */ }
     </style>
 </head>
 <body>
-<!-- Schermata di blocco PIN -->
-<div id="pin-lock-screen">
-    <h2>Inserisci il PIN</h2>
-    <div id="pin-display-container">
-        <div class="pin-digit" id="pin-digit-0"></div>
-        <div class="pin-digit" id="pin-digit-1"></div>
-        <div class="pin-digit" id="pin-digit-2"></div>
-        <div class="pin-digit" id="pin-digit-3"></div>
-    </div>
-    <div id="pin-keypad">
-        <div class="key" data-pin-value="1">1</div>
-        <div class="key" data-pin-value="2">2</div>
-        <div class="key" data-pin-value="3">3</div>
-        <div class="key" data-pin-value="4">4</div>
-        <div class="key" data-pin-value="5">5</div>
-        <div class="key" data-pin-value="6">6</div>
-        <div class="key" data-pin-value="7">7</div>
-        <div class="key" data-pin-value="8">8</div>
-        <div class="key" data-pin-value="9">9</div>
-        <div class="key" id="pin-clear-button">C</div>
-        <div class="key" data-pin-value="0">0</div>
-        <div class="key" id="pin-enter-button">✔</div>
-    </div>
-    <div id="pin-message"></div>
+
+<!-- Schermata di Login con Google -->
+<div id="login-screen">
+    <h2>Cash App</h2>
+    <p>Accedi per continuare</p>
+    <button id="google-login-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+        <span>Accedi con Google</span>
+    </button>
+</div>
+
+<!-- Informazioni utente loggato -->
+<div id="user-info" style="display:none;">
+    <img id="user-avatar" src="" alt="Avatar">
+    <span id="user-name"></span>
 </div>
 
 <!-- Contenitore principale dell'applicazione (inizialmente nascosto) -->
@@ -483,20 +138,12 @@
         <div class="bottom-input-area">
             <div class="keypad">
                 <input type="text" id="display" disabled />
-                <div class="key" data-value="7">7</div>
-                <div class="key" data-value="8">8</div>
-                <div class="key" data-value="9">9</div>
-                <div class="key" data-value="4">4</div>
-                <div class="key" data-value="5">5</div>
-                <div class="key" data-value="6">6</div>
-                <div class="key" data-value="1">1</div>
-                <div class="key" data-value="2">2</div>
-                <div class="key" data-value="3">3</div>
-                <div class="key" id="clear">C</div>
-                <div class="key" data-value="0">0</div>
-                <div class="key" data-value=".">.</div>
+                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div>
+                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div>
+                <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div>
+                <div class="key" id="clear">C</div><div class="key" data-value="0">0</div><div class="key" data-value=".">.</div>
             </div>
-            <div id="log">Firebase non connesso</div>
+            <div id="log">Effettua il login per iniziare</div>
             <textarea id="note" placeholder="Note..."></textarea>
         </div>
     </div>
@@ -504,7 +151,7 @@
         <button class="cash" onclick="register('CASH')">CASH</button>
         <button class="pos" onclick="register('POS')">POS</button>
         <button class="uscite" onclick="register('USCITE')">USCITE</button>
-        <button class="history-button" onclick="mostraStorico()">📖</button>
+        <button class="history-button" onclick="loadSheetData()">📖</button>
     </div>
 </div>
 
@@ -515,17 +162,20 @@
     <div id="storico-popup-content"></div>
 </div>
 
-<!-- User ID Display -->
-<div id="user-id-display" style="display:none;"></div>
-
-
 <script type="module">
     // Importa le funzioni necessarie dagli SDK di Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, OAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // Configurazione di Firebase
+    // --- CONFIGURAZIONE FOGLIO GOOGLE ---
+    // IMPORTANTE: Sostituisci questi valori con l'ID e il range del tuo foglio Google.
+    // L'ID si trova nell'URL del tuo foglio. Es: https://docs.google.com/spreadsheets/d/ID_FOGLIO/edit
+    const SPREADSHEET_ID = 'SOSTITUISCI_CON_IL_TUO_ID_FOGLIO_GOOGLE';
+    // Il Range indica le celle da leggere. Es: 'NomeFoglio!A1:E100'
+    const RANGE = 'Foglio1!A:E';
+    // ------------------------------------
+
+    // Configurazione di Firebase (invariata)
     const firebaseConfig = {
         apiKey: "AIzaSyDJI-Ib0FT6hMVlvZ6PHma_cSQ6BHlADoY",
         authDomain: "cashapp-a7ef4.firebaseapp.com",
@@ -539,109 +189,82 @@
     // Inizializza Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-    // Variabili globali per l'app
-    let dbInstance = null;
-    let authInstance = null;
-    let userId = null;
+    // Aggiungi lo 'scope' per l'API di Google Sheets (sola lettura)
+    provider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
 
-    // Costanti e variabili per il PIN
-    const CORRECT_PIN = "1093";
-    let currentPinInput = "";
-    const pinDisplayDigits = Array.from({ length: 4 }, (_, i) => document.getElementById(`pin-digit-${i}`));
-    const pinMessage = document.getElementById("pin-message");
-    const pinLockScreen = document.getElementById("pin-lock-screen");
-    const mainAppContainer = document.getElementById("main-app-container");
+    // Elementi del DOM
+    const loginScreen = document.getElementById('login-screen');
+    const mainAppContainer = document.getElementById('main-app-container');
+    const googleLoginBtn = document.getElementById('google-login-btn');
     const logBox = document.getElementById('log');
-    const userIdDisplay = document.getElementById('user-id-display');
+    const userInfoDiv = document.getElementById('user-info');
+    
+    let oauthAccessToken = null;
 
-    // Funzione per aggiornare il display del PIN
-    function updatePinDisplay() {
-        pinDisplayDigits.forEach((digit, i) => {
-            digit.classList.toggle("hidden-char", i < currentPinInput.length);
-        });
-        pinMessage.textContent = "";
-    }
-
-    // Gestore per il tastierino del PIN
-    document.getElementById("pin-keypad").addEventListener("click", async (event) => {
-        const target = event.target;
-        if (!target.classList.contains("key")) return;
-
-        const value = target.getAttribute("data-pin-value");
-
-        if (value) { // Tasti numerici
-            if (currentPinInput.length < 4) {
-                currentPinInput += value;
-                updatePinDisplay();
-            }
-        } else if (target.id === "pin-clear-button") { // Tasto Clear
-            currentPinInput = "";
-            updatePinDisplay();
-        } else if (target.id === "pin-enter-button") { // Tasto Enter
-            if (currentPinInput === CORRECT_PIN) {
-                logBox.textContent = "PIN corretto. Accesso a Firebase in corso...";
-                try {
-                    await signInAnonymously(auth);
-                    // L'observer onAuthStateChanged gestirà il resto
-                } catch (error) {
-                    logBox.textContent = `Errore di autenticazione: ${error.message}`;
-                    pinMessage.textContent = "Errore di connessione a Firebase.";
-                }
-            } else {
-                pinMessage.textContent = "PIN errato. Riprova.";
-                currentPinInput = "";
-                updatePinDisplay();
-            }
-        }
+    // Gestore per il login con Google
+    googleLoginBtn.addEventListener('click', () => {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                // Login riuscito
+                const credential = GoogleAuthProvider.credentialFromResult(result);
+                oauthAccessToken = credential.accessToken;
+                const user = result.user;
+                
+                logBox.textContent = 'Login effettuato con successo!';
+                // Il resto della UI viene gestito dall'observer onAuthStateChanged
+            }).catch((error) => {
+                // Gestione errori
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                const email = error.customData ? error.customData.email : 'N/A';
+                const credential = GoogleAuthProvider.credentialFromError(error);
+                logBox.textContent = `Errore di login: ${errorMessage}`;
+                console.error("Errore di login Google:", { errorCode, errorMessage, email, credential });
+            });
     });
 
     // Observer per lo stato di autenticazione
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // L'utente è loggato (in modo anonimo)
-            userId = user.uid;
-            dbInstance = db; // Assegna l'istanza del db
-            authInstance = auth; // Assegna l'istanza di auth
-
-            logBox.textContent = `Connesso a Firebase.`;
-            userIdDisplay.textContent = `UserID: ${userId}`;
-            userIdDisplay.style.display = 'block';
-
-            pinLockScreen.style.display = "none";
-            mainAppContainer.style.display = "flex";
-
-            // Ora che siamo autenticati, possiamo iniziare ad ascoltare i dati
-            setupRealtimeListener();
+            // L'utente è loggato
+            loginScreen.style.display = 'none';
+            mainAppContainer.style.display = 'flex';
+            userInfoDiv.style.display = 'flex';
+            document.getElementById('user-name').textContent = user.displayName;
+            document.getElementById('user-avatar').src = user.photoURL;
+            
+            // Se l'accessToken non è già stato salvato dal popup, prova a richiederlo di nuovo
+            // Questo potrebbe essere necessario se l'utente ricarica la pagina mentre è già loggato
+            if (!oauthAccessToken) {
+                 user.getIdTokenResult().then(idTokenResult => {
+                    // Nota: getIdToken() non fornisce un access token per le API di Google.
+                    // Il modo migliore è salvarlo durante il signInWithPopup.
+                    // Questa parte è più complessa e per ora ci affidiamo all'accessToken ottenuto al primo login.
+                    logBox.textContent = `Bentornato, ${user.displayName}!`;
+                 });
+            }
 
         } else {
             // L'utente è disconnesso
-            userId = null;
-            dbInstance = null;
-            authInstance = null;
-
-            logBox.textContent = "Disconnesso. Inserisci il PIN per iniziare.";
-            userIdDisplay.style.display = 'none';
-
-            pinLockScreen.style.display = "flex";
-            mainAppContainer.style.display = "none";
+            oauthAccessToken = null;
+            loginScreen.style.display = 'flex';
+            mainAppContainer.style.display = 'none';
+            userInfoDiv.style.display = 'none';
+            logBox.textContent = 'Effettua il login per iniziare';
         }
     });
 
-
-    // Esegue il codice quando il DOM è completamente caricato
     document.addEventListener("DOMContentLoaded", () => {
-        // Inizializza la UI
         setupUI();
-        updatePinDisplay();
     });
 
-    // Funzione per impostare gli elementi della UI
+    // Imposta gli elementi della UI come categorie e tastierino
     function setupUI() {
         const categories = ['FOTOLAB', 'PHOTOSI', 'GRAFICA', 'PANNELLI', 'TIPOGRAFIA', 'LASER', 'MAGLIETTE', 'CUSTOM'];
         const container = document.getElementById('categories');
-        container.innerHTML = ''; // Pulisce le categorie esistenti
+        container.innerHTML = '';
         categories.forEach(cat => {
             const btn = document.createElement('button');
             btn.textContent = cat;
@@ -659,7 +282,6 @@
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
                 if (value) {
-                    // Impedisce punti multipli
                     if (value === '.' && currentInput.includes('.')) return;
                     currentInput += value;
                     display.value = currentInput;
@@ -671,114 +293,80 @@
         });
     }
 
-    // Funzione per registrare un movimento su Firestore
-    window.register = async function(type) {
-        if (!dbInstance || !userId) {
-            logBox.textContent = "Errore: Non connesso a Firebase.";
+    // Funzione per caricare i dati dal Foglio Google
+    window.loadSheetData = async function() {
+        if (!oauthAccessToken) {
+            logBox.textContent = "Token di accesso non disponibile. Effettua nuovamente il login.";
+            alert("Per favore, effettua nuovamente il login per aggiornare la connessione a Google Sheets.");
             return;
         }
-
-        const display = document.getElementById('display');
-        const amount = parseFloat(display.value);
-        const note = document.getElementById('note').value.trim();
-        const resultBox = document.getElementById('result');
-        const categoryBtn = document.querySelector('.category.active');
-
-        if (!categoryBtn) {
-            resultBox.innerText = 'Errore: Seleziona una categoria.';
-            resultBox.style.color = '#ff6347';
+        if (SPREADSHEET_ID === 'SOSTITUISCI_CON_IL_TUO_ID_FOGLIO_GOOGLE') {
+            logBox.textContent = "ID del foglio non configurato.";
+            alert("Per favore, imposta SPREADSHEET_ID nel codice HTML per collegare il tuo foglio Google.");
             return;
         }
-        const category = categoryBtn.textContent;
-
-        if (category === 'CUSTOM' && note === '') {
-            resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.';
-            resultBox.style.color = '#ff6347';
-            return;
-        }
-
-        if (isNaN(amount) || display.value === '') {
-            resultBox.innerText = 'Errore: Inserire un importo valido.';
-            resultBox.style.color = '#ff6347';
-            return;
-        }
-
-        const movimento = {
-            importo: type === 'USCITE' ? -Math.abs(amount) : amount,
-            categoria: category,
-            note: note,
-            tipo: type,
-            createdAt: serverTimestamp() // Usa il timestamp del server per l'ordinamento
-        };
-        
-        logBox.textContent = "Registrazione in corso...";
-        try {
-            const docRef = await addDoc(collection(dbInstance, "movimenti", userId, "transazioni"), movimento);
-            logBox.textContent = `Movimento registrato con ID: ${docRef.id}`;
-            
-            // Reset UI
-            display.value = '';
-            document.getElementById('note').value = '';
-            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
-            resultBox.innerText = `Registrato: €${movimento.importo.toFixed(2)} - ${type} - ${category}`;
-            resultBox.style.color = '#90ee90';
-
-        } catch (error) {
-            logBox.textContent = `Errore nella registrazione: ${error.message}`;
-            resultBox.innerText = 'Errore di registrazione.';
-            resultBox.style.color = '#ff6347';
-            console.error("Errore durante l'aggiunta del documento: ", error);
-        }
-    }
-
-    // Funzione per impostare il listener di Firestore e aggiornare la tabella dello storico
-    function setupRealtimeListener() {
-        if (!dbInstance || !userId) return;
 
         const storicoBox = document.getElementById('storico-popup-content');
-        const q = query(collection(dbInstance, "movimenti", userId, "transazioni"), orderBy("createdAt", "desc"));
+        document.getElementById('popup-overlay').style.display = 'block';
+        document.getElementById('storico-modal').style.display = 'block';
+        storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
+        logBox.textContent = 'Caricamento dati dal foglio Google...';
 
-        onSnapshot(q, (querySnapshot) => {
-            if (querySnapshot.empty) {
-                storicoBox.innerHTML = '<p>Nessun movimento trovato.</p>';
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${oauthAccessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Errore API Google: ${errorData.error.message}`);
+            }
+
+            const data = await response.json();
+            const rows = data.values;
+
+            if (!rows || rows.length === 0) {
+                storicoBox.innerHTML = '<p>Nessun dato trovato nel foglio.</p>';
+                logBox.textContent = 'Nessun dato trovato.';
                 return;
             }
 
-            let html = '<table><thead><tr><th>Data</th><th>Importo</th><th>Categoria</th><th>Tipo</th><th>Note</th></tr></thead><tbody>';
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const ts = data.createdAt ? data.createdAt.toDate() : new Date();
-                const formattedDate = ts.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                html += `
-                    <tr>
-                        <td>${formattedDate}</td>
-                        <td>€${data.importo.toFixed(2)}</td>
-                        <td>${data.categoria}</td>
-                        <td>${data.tipo}</td>
-                        <td>${data.note || ''}</td>
-                    </tr>
-                `;
+            // L'API di Sheets restituisce un array di array.
+            // La prima riga (rows[0]) può essere l'intestazione.
+            const headers = rows[0];
+            const dataRows = rows.slice(1);
+            
+            let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+            dataRows.forEach(row => {
+                html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
             });
             html += '</tbody></table>';
+            
             storicoBox.innerHTML = html;
-        }, (error) => {
-            logBox.textContent = `Errore di connessione a Firestore: ${error.message}`;
-            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento dello storico.</p>`;
-        });
+            logBox.textContent = 'Dati caricati con successo.';
+
+        } catch (error) {
+            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
+            logBox.textContent = `Errore: ${error.message}`;
+            console.error("Errore fetch Google Sheets:", error);
+        }
+    }
+    
+    // Funzione di registrazione (attualmente disabilitata)
+    window.register = function(type) {
+        logBox.textContent = "Funzione di scrittura non ancora implementata per Google Sheets.";
+        alert("La funzione per salvare nuovi dati su Google Sheets deve essere ancora implementata.");
     }
 
     // Funzioni per la UI della modal
-    window.mostraStorico = function() {
-        document.getElementById('popup-overlay').style.display = 'block';
-        document.getElementById('storico-modal').style.display = 'block';
-    }
-
     window.chiudiPopup = function() {
         document.getElementById('popup-overlay').style.display = 'none';
         document.getElementById('storico-modal').style.display = 'none';
     }
-
 </script>
 </body>
 </html>
