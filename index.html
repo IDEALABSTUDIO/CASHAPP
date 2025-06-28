@@ -159,7 +159,8 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
+    // Aggiorna lo scope per consentire lettura E scrittura
+    provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 
     const loginScreen = document.getElementById('login-screen');
     const mainAppContainer = document.getElementById('main-app-container');
@@ -204,8 +205,10 @@
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
+            // Se l'utente è loggato ma non abbiamo il token (es. ricarica pagina),
+            // lo otterremo nuovamente al prossimo tentativo di login.
             if (!oauthAccessToken) {
-                logBox.textContent = `Bentornato, ${user.displayName}! Ricarica per interagire con Google Sheet.`;
+                logBox.textContent = `Bentornato, ${user.displayName}!`;
             }
         } else {
             oauthAccessToken = null;
@@ -254,13 +257,7 @@
 
     window.loadSheetData = async function() {
         if (!oauthAccessToken) {
-            logBox.textContent = "Token di accesso non disponibile. Effettua nuovamente il login.";
-            alert("Per favore, effettua nuovamente il login per aggiornare la connessione a Google Sheets.");
-            return;
-        }
-        if (SPREADSHEET_ID === 'SOSTITUISCI_CON_IL_TUO_ID_FOGLIO_GOOGLE') {
-            logBox.textContent = "ID del foglio non configurato.";
-            alert("Per favore, imposta SPREADSHEET_ID nel codice HTML per collegare il tuo foglio Google.");
+            alert("Per favore, effettua nuovamente il login per leggere i dati.");
             return;
         }
 
@@ -303,9 +300,85 @@
         }
     }
     
-    window.register = function(type) {
-        logBox.textContent = "Funzione di scrittura non ancora implementata per Google Sheets.";
-        alert("La funzione per salvare nuovi dati su Google Sheets deve essere ancora implementata.");
+    // Funzione per registrare un nuovo movimento sul Foglio Google
+    window.register = async function(type) {
+        if (!oauthAccessToken) {
+            alert("Per favore, effettua nuovamente il login per salvare i dati.");
+            return;
+        }
+
+        const display = document.getElementById('display');
+        const amount = parseFloat(display.value);
+        const note = document.getElementById('note').value.trim();
+        const resultBox = document.getElementById('result');
+        const categoryBtn = document.querySelector('.category.active');
+
+        if (!categoryBtn) {
+            resultBox.innerText = 'Errore: Seleziona una categoria.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+        const category = categoryBtn.textContent;
+
+        if (category === 'CUSTOM' && note === '') {
+            resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+
+        if (isNaN(amount) || display.value === '') {
+            resultBox.innerText = 'Errore: Inserire un importo valido.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+
+        const now = new Date();
+        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
+        
+        const newRow = [dateString, finalAmount, category, type, note];
+
+        const appendRange = 'Foglio1'; // Il nome del foglio a cui aggiungere dati.
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
+
+        const body = {
+            values: [newRow]
+        };
+
+        logBox.textContent = "Registrazione in corso...";
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${oauthAccessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Errore API Google: ${errorData.error.message}`);
+            }
+
+            const responseData = await response.json();
+            
+            logBox.textContent = `Movimento registrato con successo!`;
+            resultBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
+            resultBox.style.color = '#90ee90';
+
+            // Reset UI
+            display.value = '';
+            document.getElementById('note').value = '';
+            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+
+        } catch (error) {
+            logBox.textContent = `Errore nella registrazione: ${error.message}`;
+            resultBox.innerText = 'Errore di registrazione.';
+            resultBox.style.color = '#ff6347';
+            console.error("Errore durante l'aggiunta della riga: ", error);
+        }
     }
 
     window.chiudiPopup = function() {
