@@ -1,916 +1,784 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cash Tracker</title>
-  <style>
-    /* Reset e stili globali */
-    * { box-sizing: border-box; }
-    html, body { 
-      margin: 0; 
-      padding: 0; 
-      height: 100%; /* Assicura che html e body occupino l'intera altezza del viewport */
-      overflow: hidden; /* Impedisce lo scorrimento della pagina principale */
-      font-family: sans-serif; 
-      background: #111; 
-      color: #fff; 
-    }
-    
-    /* Layout principale del contenitore */
-    .container { 
-      display: flex; 
-      height: 100vh; /* Utilizza l'altezza del viewport */
-      flex-direction: row; /* Default per schermi grandi (affiancati) */
-      overflow: hidden; /* Impedisce lo scorrimento del contenitore principale */
-    }
-    
-    /* Stili per le colonne sinistra, centro e destra */
-    .left, .center, .right {
-      background: #1e1e1e; /* Colore di sfondo scuro per i pannelli laterali */
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      flex-shrink: 0; /* Impedisce che si riducano troppo senza necessità */
-      flex-grow: 0; /* Impedisce che crescano troppo senza necessità */
-    }
-    
-    .left {
-      flex-basis: 240px; /* Dimensione preferita */
-      min-width: 160px; /* Larghezza minima ridotta */
-      max-width: 25%; /* Max percentuale su schermi molto grandi */
-      justify-content: flex-start; /* Allinea le categorie in alto */
-    }
-    
-    .center {
-      flex-grow: 1; /* Il pannello centrale occupa lo spazio rimanente */
-      background: #181818; /* Sfondo leggermente più scuro per l'area di input */
-      padding: 1rem; /* Padding per il contenuto centrale */
-      display: flex; /* Rende il centro un contenitore flex */
-      flex-direction: column; /* Impila gli elementi verticalmente */
-      overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
-    }
-    
-    .right {
-      flex-basis: 180px; /* Dimensione preferita leggermente ridotta */
-      min-width: 120px; /* Larghezza minima ridotta */
-      max-width: 20%; /* Max percentuale su schermi molto grandi */
-      justify-content: center; /* Centra i pulsanti verticalmente */
-      align-items: stretch; /* Estende i pulsanti per riempire la larghezza */
-      gap: 0.6rem; /* Spazio tra i pulsanti leggermente ridotto */
-      overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
-    }
-    
-    /* Stili per le categorie nel pannello sinistro */
-    .categories {
-      display: flex;
-      flex-direction: column; /* Default verticale */
-      justify-content: flex-start;
-      align-items: stretch;
-      gap: 0.4rem; /* Spazio tra i bottoni categoria leggermente ridotto */
-      height: 100%; /* Occupa l'altezza disponibile del contenitore .left */
-      overflow-y: auto; /* Permette lo scorrimento interno se le categorie non si adattano */
-    }
-    
-    .category {
-      height: auto; /* L'altezza è determinata dal contenuto e dal padding */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 1; /* Permette alle categorie di restringersi */
-      flex-grow: 0; /* Non crescono per riempire lo spazio eccessivo */
-      min-height: 30px; /* Altezza minima ulteriormente ridotta */
-      padding: 0.7rem; /* Padding ulteriormente ridotto per più compattezza */
-      background: #333; /* Sfondo scuro per il bottone categoria */
-      border: none;
-      cursor: pointer;
-      border-radius: 4px; /* Bordi arrotondati */
-      text-align: center;
-      font-size: 1rem; /* Font leggermente ridotto */
-      color: white; /* Testo bianco */
-      transition: background 0.3s ease; /* Transizione per l'hover/active */
-    }
-    
-    .category:hover {
-        background: #444; /* Colore più chiaro all'hover */
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Tracker - Firebase</title>
+    <style>
+        /* Reset e stili globali */
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%; /* Assicura che html e body occupino l'intera altezza del viewport */
+            overflow: hidden; /* Impedisce lo scorrimento della pagina principale */
+            font-family: sans-serif;
+            background: #111;
+            color: #fff;
+        }
 
-    .category.active {
-        background: #555; /* Colore diverso per la categoria attiva */
-        border: 2px solid #66bb6a; /* Bordo verde per la categoria attiva */
-    }
-    
-    /* Stili per l'area dei messaggi in alto (solo risultato) */
-    .top-messages-area {
-      margin-bottom: 0.8rem; /* Spazio tra i messaggi e l'area di input */
-    }
+        /* Layout principale del contenitore */
+        .container {
+            display: flex;
+            height: 100vh; /* Utilizza l'altezza del viewport */
+            flex-direction: row; /* Default per schermi grandi (affiancati) */
+            overflow: hidden; /* Impedisce lo scorrimento del contenitore principale */
+        }
 
-    /* Stili per l'area di input e tastierino in basso */
-    .bottom-input-area {
-      margin-top: auto; /* Spinge questa area e il suo contenuto in fondo al contenitore .center */
-      width: 100%; /* Assicura che l'area prenda tutta la larghezza disponibile */
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem; /* Spazio tra gli elementi: tastierino, log, note */
-    }
+        /* Stili per le colonne sinistra, centro e destra */
+        .left, .center, .right {
+            background: #1e1e1e; /* Colore di sfondo scuro per i pannelli laterali */
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            flex-shrink: 0; /* Impedisce che si riducano troppo senza necessità */
+            flex-grow: 0; /* Impedisce che crescano troppo senza necessità */
+        }
 
-    /* Stili per il tastierino numerico principale */
-    .keypad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr); /* 3 colonne uguali */
-      gap: 0.4rem; /* Spazio tra i tasti ridotto */
-      width: 100%;
-    }
-    
-    .keypad input {
-      grid-column: span 3; /* L'input si estende per 3 colonne */
-      font-size: 3.5rem; /* Dimensione del font ridotta per adattarsi meglio */
-      text-align: right;
-      padding: 0.4rem; /* Padding ridotto */
-      background: #000; /* Sfondo nero per l'input */
-      border: none;
-      color: #fff; /* Testo bianco */
-      width: 100%;
-      height: 7rem; /* Altezza ridotta per adattarsi meglio */
-      border-radius: 4px; /* Bordi arrotondati */
-    }
-    
-    .key {
-      height: 70px; /* Altezza ridotta per i tasti principali */
-      background: #222; /* Sfondo scuro per i tasti */
-      border: none;
-      cursor: pointer;
-      font-size: 1.5rem; /* Font leggermente ridotto */
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      transition: background 0.3s ease; /* Transizione per l'hover */
-    }
+        .left {
+            flex-basis: 240px; /* Dimensione preferita */
+            min-width: 160px; /* Larghezza minima ridotta */
+            max-width: 25%; /* Max percentuale su schermi molto grandi */
+            justify-content: flex-start; /* Allinea le categorie in alto */
+        }
 
-    .key:hover {
-        background: #3a3a3a; /* Colore più chiaro all'hover */
-    }
-    
-    #clear {
-        background: #e74c3c; /* Colore rosso per il tasto Clear */
-    }
-    #clear:hover {
-        background: #c0392b;
-    }
+        .center {
+            flex-grow: 1; /* Il pannello centrale occupa lo spazio rimanente */
+            background: #181818; /* Sfondo leggermente più scuro per l'area di input */
+            padding: 1rem; /* Padding per il contenuto centrale */
+            display: flex; /* Rende il centro un contenitore flex */
+            flex-direction: column; /* Impila gli elementi verticalmente */
+            overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
+        }
 
-    /* Stili per i pulsanti di registrazione (CASH, POS, USCITE) */
-    .right button {
-      height: auto; /* Altezza determinata da padding e contenuto */
-      padding: 1rem; /* Padding più compatto */
-      font-size: 1.2rem; /* Font leggermente ridotto */
-      font-weight: bold;
-      border: none;
-      border-radius: 8px; /* Bordi arrotondati */
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 1; /* Permette ai pulsanti di restringersi */
-      flex-grow: 0; /* Non crescono per riempire spazio eccessivo */
-      min-height: 55px; /* Altezza minima per mantenere la cliccabilità */
-      transition: background 0.3s ease, transform 0.2s ease; /* Transizioni */
-    }
+        .right {
+            flex-basis: 180px; /* Dimensione preferita leggermente ridotta */
+            min-width: 120px; /* Larghezza minima ridotta */
+            max-width: 20%; /* Max percentuale su schermi molto grandi */
+            justify-content: center; /* Centra i pulsanti verticalmente */
+            align-items: stretch; /* Estende i pulsanti per riempire la larghezza */
+            gap: 0.6rem; /* Spazio tra i pulsanti leggermente ridotto */
+            overflow-y: auto; /* Permette lo scorrimento interno se il contenuto è troppo alto */
+        }
 
-    .right button:hover {
-        transform: translateY(-2px); /* Leggero sollevamento all'hover */
-    }
-    
-    .cash { background: #2ecc71; } /* Verde per CASH */
-    .cash:hover { background: #27ae60; }
-    
-    .pos { background: #3498db; } /* Blu per POS */
-    .pos:hover { background: #2980b9; }
-    
-    .uscite { background: #e74c3c; } /* Rosso per USCITE */
-    .uscite:hover { background: #c0392b; }
+        /* Stili per le categorie nel pannello sinistro */
+        .categories {
+            display: flex;
+            flex-direction: column; /* Default verticale */
+            justify-content: flex-start;
+            align-items: stretch;
+            gap: 0.4rem; /* Spazio tra i bottoni categoria leggermente ridotto */
+            height: 100%; /* Occupa l'altezza disponibile del contenitore .left */
+            overflow-y: auto; /* Permette lo scorrimento interno se le categorie non si adattano */
+        }
 
-    /* Nuovo stile per il pulsante Visualizza Storico */
-    .history-button {
-      height: 38px; /* Altezza fissa più compatta */
-      padding: 0.2rem; /* Padding ridotto */
-      background: #ffc107; /* Giallo */
-      color: #000; /* Testo nero */
-      font-size: 1.4rem; /* Dimensione dell'icona per visibilità */
-      border-radius: 8px;
-      line-height: 1; /* Assicura che l'icona sia centrata verticalmente */
-      /* Rimosso margin-top: auto per posizionarlo sotto USCITE */
-      margin-top: 0; /* Assicurati che non ci sia margine automatico */
-      flex-shrink: 1; /* Permette di restringersi */
-      flex-grow: 0; /* Non cresce per riempire spazio eccessivo */
-    }
-    .history-button:hover {
-        background: #e0a800; /* Giallo più scuro all'hover */
-    }
-    
-    /* Stili per l'area delle note */
-    #note {
-      width: 100%;
-      padding: 0.5rem;
-      background: #222;
-      border: 1px solid #444;
-      color: #fff;
-      border-radius: 4px;
-      resize: vertical; /* Permette il ridimensionamento verticale */
-    }
-    
-    /* Stili per i messaggi di risultato */
-    #result {
-      margin-top: 0.5rem;
-      padding: 0.5rem;
-      background: #333;
-      border-radius: 4px;
-      color: #90ee90; /* Verde chiaro per i messaggi di successo */
-      text-align: center;
-    }
+        .category {
+            height: auto; /* L'altezza è determinata dal contenuto e dal padding */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 1; /* Permette alle categorie di restringersi */
+            flex-grow: 0; /* Non crescono per riempire lo spazio eccessivo */
+            min-height: 30px; /* Altezza minima ulteriormente ridotta */
+            padding: 0.7rem; /* Padding ulteriormente ridotto per più compattezza */
+            background: #333; /* Sfondo scuro per il bottone categoria */
+            border: none;
+            cursor: pointer;
+            border-radius: 4px; /* Bordi arrotondati */
+            text-align: center;
+            font-size: 1rem; /* Font leggermente ridotto */
+            color: white; /* Testo bianco */
+            transition: background 0.3s ease; /* Transizione per l'hover/active */
+        }
 
-    /* Stili per il log di sincronizzazione */
-    #log {
-      margin-top: 1rem; /* Spazio sopra il log */
-      margin-bottom: 0.5rem; /* Spazio sotto il log */
-      padding: 0.5rem;
-      font-size: 0.9rem;
-      color: #ccc;
-      font-style: italic;
-      text-align: center;
-      background: #333; /* Sfondo leggermente scuro per il log */
-      border-radius: 4px;
-    }
-    
-    /* Stili per la modal dello storico */
-    #popup-overlay {
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background:rgba(0,0,0,0.6); /* Sfondo semi-trasparente */
-      z-index:9998; /* Assicura che sia sotto la modal ma sopra il resto */
-    }
-    
-    #storico-modal {
-      display:none;
-      position:fixed;
-      top:5%;
-      left:50%;
-      transform:translateX(-50%); /* Centra la modal orizzontalmente */
-      width:80%;
-      height:80%;
-      background:#1e1e1e; /* Sfondo scuro per la modal */
-      color:white;
-      overflow:auto; /* Aggiunge scroll se il contenuto è troppo grande */
-      padding:1rem;
-      border-radius:8px;
-      z-index:9999; /* Assicura che sia sopra l'overlay */
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5); /* Ombra più pronunciata */
-    }
-    
-    #storico-modal button {
-      position:absolute;
-      top:1rem;
-      right:1rem;
-      font-size:1.2rem;
-      background:#e74c3c; /* Rosso per il pulsante Chiudi */
-      color:white;
-      border:none;
-      padding:0.5rem 1rem;
-      cursor:pointer;
-      border-radius: 4px;
-      transition: background 0.3s ease;
-    }
-    #storico-modal button:hover {
-        background: #c0392b;
-    }
-    
-    #storico-popup-content {
-      margin-top: 3rem; /* Spazio per il pulsante chiudi */
-    }
-    
-    #storico-popup-content table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    
-    #storico-popup-content th, #storico-popup-content td {
-      padding: 0.8rem;
-      text-align: left;
-      border-bottom: 1px solid #444; /* Linea divisoria sottile */
-      font-size: 0.9rem;
-    }
-    
-    #storico-popup-content th {
-      background: #333; /* Sfondo per le intestazioni della tabella */
-      font-weight: bold;
-    }
+        .category:hover {
+            background: #444; /* Colore più chiaro all'hover */
+        }
 
-    /* Stili per la schermata di blocco PIN */
-    #pin-lock-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95); /* Sfondo scuro quasi opaco */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000; /* Assicura che sia sopra tutto */
-        color: white;
-    }
+        .category.active {
+            background: #555; /* Colore diverso per la categoria attiva */
+            border: 2px solid #66bb6a; /* Bordo verde per la categoria attiva */
+        }
 
-    #pin-display-container {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-    }
+        /* Stili per l'area dei messaggi in alto (solo risultato) */
+        .top-messages-area {
+            margin-bottom: 0.8rem; /* Spazio tra i messaggi e l'area di input */
+        }
 
-    .pin-digit {
-        width: 40px;
-        height: 50px;
-        background: #222;
-        border: 2px solid #555;
-        border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 2em;
-        font-weight: bold;
-        color: #fff;
-    }
+        /* Stili per l'area di input e tastierino in basso */
+        .bottom-input-area {
+            margin-top: auto; /* Spinge questa area e il suo contenuto in fondo al contenitore .center */
+            width: 100%; /* Assicura che l'area prenda tutta la larghezza disponibile */
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem; /* Spazio tra gli elementi: tastierino, log, note */
+        }
 
-    /* Stile per nascondere i caratteri del PIN */
-    .pin-digit.hidden-char::before {
-        content: '•'; /* Punto per carattere nascosto */
-    }
+        /* Stili per il tastierino numerico principale */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 colonne uguali */
+            gap: 0.4rem; /* Spazio tra i tasti ridotto */
+            width: 100%;
+        }
 
-    #pin-keypad {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        width: 300px; /* Larghezza fissa per il tastierino PIN */
-        max-width: 90%; /* Per responsività su schermi più piccoli */
-    }
+        .keypad input {
+            grid-column: span 3; /* L'input si estende per 3 colonne */
+            font-size: 3.5rem; /* Dimensione del font ridotta per adattarsi meglio */
+            text-align: right;
+            padding: 0.4rem; /* Padding ridotto */
+            background: #000; /* Sfondo nero per l'input */
+            border: none;
+            color: #fff; /* Testo bianco */
+            width: 100%;
+            height: 7rem; /* Altezza ridotta per adattarsi meglio */
+            border-radius: 4px; /* Bordi arrotondati */
+        }
 
-    #pin-keypad .key {
-      height: 80px; /* Altezza dei tasti PIN */
-      font-size: 2.2rem;
-      background: #333;
-      border: 1px solid #555;
-      color: white;
-      transition: background 0.3s ease;
-    }
-    #pin-keypad .key:hover {
-        background: #555;
-    }
+        .key {
+            height: 70px; /* Altezza ridotta per i tasti principali */
+            background: #222; /* Sfondo scuro per i tasti */
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem; /* Font leggermente ridotto */
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: background 0.3s ease; /* Transizione per l'hover */
+        }
 
-    #pin-clear-button {
-        background: #e74c3c;
-    }
-    #pin-clear-button:hover {
-        background: #c0392b;
-    }
+        .key:hover {
+            background: #3a3a3a; /* Colore più chiaro all'hover */
+        }
 
-    #pin-enter-button {
-        background: #2ecc71; /* Già verde */
-    }
-    #pin-enter-button:hover {
-        background: #27ae60;
-    }
+        #clear {
+            background: #e74c3c; /* Colore rosso per il tasto Clear */
+        }
+        #clear:hover {
+            background: #c0392b;
+        }
 
-    #pin-message {
-        margin-top: 20px;
-        color: #ff6347; /* Colore per i messaggi di errore PIN */
-        font-size: 1.1em;
-        text-align: center;
-    }
+        /* Stili per i pulsanti di registrazione (CASH, POS, USCITE) */
+        .right button {
+            height: auto; /* Altezza determinata da padding e contenuto */
+            padding: 1rem; /* Padding più compatto */
+            font-size: 1.2rem; /* Font leggermente ridotto */
+            font-weight: bold;
+            border: none;
+            border-radius: 8px; /* Bordi arrotondati */
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 1; /* Permette ai pulsanti di restringersi */
+            flex-grow: 0; /* Non crescono per riempire spazio eccessivo */
+            min-height: 55px; /* Altezza minima per mantenere la cliccabilità */
+            transition: background 0.3s ease, transform 0.2s ease; /* Transizioni */
+        }
 
-    /* Media Queries per la responsività */
-    /* Per schermi fino a 1200px (ad esempio, tablet in landscape, laptop più piccoli) */
-    @media (max-width: 1200px) {
-      .left {
-        flex-basis: 160px; /* Larghezza ridotta */
-        min-width: 120px;
-      }
-      .right {
-        flex-basis: 140px; /* Larghezza ridotta */
-        min-width: 100px;
-      }
-      .category {
-        font-size: 0.95rem; /* Font ancora più piccolo */
-        padding: 0.6rem; /* Padding ridotto */
-        min-height: 28px;
-      }
-      .keypad input {
-        font-size: 3rem; /* Font del display ridotto */
-        height: 6rem;
-      }
-      .key {
-        height: 65px; /* Altezza tasti ridotta */
-        font-size: 1.3rem;
-      }
-      .right button {
-        padding: 0.9rem; /* Padding ridotto */
-        font-size: 1.0rem; /* Font ridotto */
-        min-height: 50px;
-      }
-      .history-button {
-        height: 35px; /* Altezza del pulsante storico ridotta */
-        font-size: 1.2rem; /* Dimensione icona leggermente ridotta */
-      }
-      #note {
-        font-size: 0.8rem;
-      }
-    }
+        .right button:hover {
+            transform: translateY(-2px); /* Leggero sollevamento all'hover */
+        }
 
-    /* Per schermi fino a 768px (ad esempio, tablet in portrait, smartphone) */
-    @media (max-width: 768px) {
-      body {
-        font-size: 12px; /* Riduci la dimensione del font base per schermi più piccoli */
-      }
-      .container {
-        flex-direction: column; /* Impila le colonne verticalmente */
-        height: auto; /* Permetti all'altezza di adattarsi al contenuto */
-      }
-      .left, .center, .right {
-        width: 100%; /* Ogni colonna occupa l'intera larghezza */
-        padding: 0.4rem;
-        flex-basis: auto; /* Resetta flex-basis */
-        min-width: unset; /* Rimuovi min-width fisso */
-        max-width: 100%; /* Occupa tutta la larghezza */
-      }
-      .right {
-        flex-direction: row; /* I pulsanti CASH, POS, USCITE si allineano orizzontalmente */
-        flex-wrap: wrap; /* Permetti ai pulsanti di andare a capo */
-        justify-content: space-around; /* Spazia i pulsanti */
-        gap: 0.5rem; /* Spazio ridotto tra i pulsanti */
-      }
-      .right button {
-        flex: 1 1 48%; /* Due pulsanti per riga con un po' di spazio */
-        padding: 0.7rem;
-        font-size: 0.9rem;
-        min-height: 45px;
-      }
-      .history-button {
-        flex-basis: 100%; /* Il pulsante storico occupa la riga intera */
-        font-size: 1rem;
-        height: 28px;
-        padding: 0.2rem;
-        margin-top: 0.4rem;
-      }
-      
-      .categories {
-        flex-direction: row; /* Le categorie si allineano orizzontalmente */
-        flex-wrap: wrap; /* Permetti alle categorie di andare a capo */
-        justify-content: center;
-        gap: 0.3rem; /* Spazio ridotto tra le categorie */
-        height: auto; /* Adatta altezza al contenuto */
-      }
-      .category {
-        flex: 1 1 48%; /* Due categorie per riga */
-        width: auto;
-        padding: 0.4rem 0.7rem;
-        min-height: unset;
-        font-size: 0.8rem;
-      }
+        .cash { background: #2ecc71; } /* Verde per CASH */
+        .cash:hover { background: #27ae60; }
 
-      .keypad input {
-        font-size: 2.5rem; /* Riduci la dimensione del display del tastierino */
-        height: 5rem;
-      }
-      .key {
-        height: 55px; /* Riduci l'altezza dei tasti del tastierino principale */
-        font-size: 1.2rem;
-      }
-      #note {
-        font-size: 0.75rem;
-        height: 4rem; /* Riduci altezza predefinita delle note */
-      }
+        .pos { background: #3498db; } /* Blu per POS */
+        .pos:hover { background: #2980b9; }
 
-      #pin-keypad {
-        width: 90%; /* Lascia un piccolo margine sui lati */
-        gap: 8px; /* Spazio ridotto tra i tasti del PIN */
-      }
-      #pin-keypad .key {
-        height: 50px; /* Riduci altezza dei tasti PIN */
-        font-size: 1.5rem;
-      }
-      .pin-digit {
-        width: 25px;
-        height: 32px;
-        font-size: 1.2em;
-      }
-    }
+        .uscite { background: #e74c3c; } /* Rosso per USCITE */
+        .uscite:hover { background: #c0392b; }
 
-    /* Per schermi molto piccoli (ad esempio, smartphone stretti) */
-    @media (max-width: 480px) {
-      .right button {
-        max-width: 100%; /* Un pulsante per riga per schermi molto stretti */
-        font-size: 0.8rem;
-      }
-      .category {
-        max-width: 100%; /* Una categoria per riga per schermi molto stretti */
-        font-size: 0.75rem;
-      }
-      .keypad input {
-        font-size: 2rem;
-        height: 4rem;
-      }
-      .key {
-        height: 40px;
-        font-size: 1rem;
-      }
-      #pin-keypad .key {
-        height: 40px;
-        font-size: 1.2rem;
-      }
-    }
-  </style>
+        /* Nuovo stile per il pulsante Visualizza Storico */
+        .history-button {
+            height: 38px; /* Altezza fissa più compatta */
+            padding: 0.2rem; /* Padding ridotto */
+            background: #ffc107; /* Giallo */
+            color: #000; /* Testo nero */
+            font-size: 1.4rem; /* Dimensione dell'icona per visibilità */
+            border-radius: 8px;
+            line-height: 1; /* Assicura che l'icona sia centrata verticalmente */
+            margin-top: 0; /* Assicurati che non ci sia margine automatico */
+            flex-shrink: 1; /* Permette di restringersi */
+            flex-grow: 0; /* Non cresce per riempire spazio eccessivo */
+        }
+        .history-button:hover {
+            background: #e0a800; /* Giallo più scuro all'hover */
+        }
+
+        /* Stili per l'area delle note */
+        #note {
+            width: 100%;
+            padding: 0.5rem;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            resize: vertical; /* Permette il ridimensionamento verticale */
+        }
+
+        /* Stili per i messaggi di risultato */
+        #result {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #333;
+            border-radius: 4px;
+            color: #90ee90; /* Verde chiaro per i messaggi di successo */
+            text-align: center;
+        }
+
+        /* Stili per il log di sincronizzazione */
+        #log {
+            margin-top: 1rem; /* Spazio sopra il log */
+            margin-bottom: 0.5rem; /* Spazio sotto il log */
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            color: #ccc;
+            font-style: italic;
+            text-align: center;
+            background: #333; /* Sfondo leggermente scuro per il log */
+            border-radius: 4px;
+        }
+
+        /* Stili per la modal dello storico */
+        #popup-overlay {
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.6); /* Sfondo semi-trasparente */
+            z-index:9998; /* Assicura che sia sotto la modal ma sopra il resto */
+        }
+
+        #storico-modal {
+            display:none;
+            position:fixed;
+            top:5%;
+            left:50%;
+            transform:translateX(-50%); /* Centra la modal orizzontalmente */
+            width:80%;
+            height:80%;
+            background:#1e1e1e; /* Sfondo scuro per la modal */
+            color:white;
+            overflow:auto; /* Aggiunge scroll se il contenuto è troppo grande */
+            padding:1rem;
+            border-radius:8px;
+            z-index:9999; /* Assicura che sia sopra l'overlay */
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5); /* Ombra più pronunciata */
+        }
+
+        #storico-modal button {
+            position:absolute;
+            top:1rem;
+            right:1rem;
+            font-size:1.2rem;
+            background:#e74c3c; /* Rosso per il pulsante Chiudi */
+            color:white;
+            border:none;
+            padding:0.5rem 1rem;
+            cursor:pointer;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        #storico-modal button:hover {
+            background: #c0392b;
+        }
+
+        #storico-popup-content {
+            margin-top: 3rem; /* Spazio per il pulsante chiudi */
+        }
+
+        #storico-popup-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        #storico-popup-content th, #storico-popup-content td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid #444; /* Linea divisoria sottile */
+            font-size: 0.9rem;
+        }
+
+        #storico-popup-content th {
+            background: #333; /* Sfondo per le intestazioni della tabella */
+            font-weight: bold;
+        }
+
+        /* Stili per la schermata di blocco PIN */
+        #pin-lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95); /* Sfondo scuro quasi opaco */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000; /* Assicura che sia sopra tutto */
+            color: white;
+        }
+
+        #pin-display-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pin-digit {
+            width: 40px;
+            height: 50px;
+            background: #222;
+            border: 2px solid #555;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* Stile per nascondere i caratteri del PIN */
+        .pin-digit.hidden-char::before {
+            content: '•'; /* Punto per carattere nascosto */
+        }
+
+        #pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 300px; /* Larghezza fissa per il tastierino PIN */
+            max-width: 90%; /* Per responsività su schermi più piccoli */
+        }
+
+        #pin-keypad .key {
+            height: 80px; /* Altezza dei tasti PIN */
+            font-size: 2.2rem;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            transition: background 0.3s ease;
+        }
+        #pin-keypad .key:hover {
+            background: #555;
+        }
+
+        #pin-clear-button {
+            background: #e74c3c;
+        }
+        #pin-clear-button:hover {
+            background: #c0392b;
+        }
+
+        #pin-enter-button {
+            background: #2ecc71; /* Già verde */
+        }
+        #pin-enter-button:hover {
+            background: #27ae60;
+        }
+
+        #pin-message {
+            margin-top: 20px;
+            color: #ff6347; /* Colore per i messaggi di errore PIN */
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        #user-id-display {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: #ccc;
+            z-index: 10001;
+        }
+
+
+        /* Media Queries per la responsività */
+        @media (max-width: 1200px) {
+            .left { flex-basis: 160px; min-width: 120px; }
+            .right { flex-basis: 140px; min-width: 100px; }
+            .category { font-size: 0.95rem; padding: 0.6rem; min-height: 28px; }
+            .keypad input { font-size: 3rem; height: 6rem; }
+            .key { height: 65px; font-size: 1.3rem; }
+            .right button { padding: 0.9rem; font-size: 1.0rem; min-height: 50px; }
+            .history-button { height: 35px; font-size: 1.2rem; }
+            #note { font-size: 0.8rem; }
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 12px; }
+            .container { flex-direction: column; height: auto; }
+            .left, .center, .right { width: 100%; padding: 0.4rem; flex-basis: auto; min-width: unset; max-width: 100%; }
+            .right { flex-direction: row; flex-wrap: wrap; justify-content: space-around; gap: 0.5rem; }
+            .right button { flex: 1 1 48%; padding: 0.7rem; font-size: 0.9rem; min-height: 45px; }
+            .history-button { flex-basis: 100%; font-size: 1rem; height: 28px; padding: 0.2rem; margin-top: 0.4rem; }
+            .categories { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.3rem; height: auto; }
+            .category { flex: 1 1 48%; width: auto; padding: 0.4rem 0.7rem; min-height: unset; font-size: 0.8rem; }
+            .keypad input { font-size: 2.5rem; height: 5rem; }
+            .key { height: 55px; font-size: 1.2rem; }
+            #note { font-size: 0.75rem; height: 4rem; }
+            #pin-keypad { width: 90%; gap: 8px; }
+            #pin-keypad .key { height: 50px; font-size: 1.5rem; }
+            .pin-digit { width: 25px; height: 32px; font-size: 1.2em; }
+        }
+
+        @media (max-width: 480px) {
+            .right button { max-width: 100%; font-size: 0.8rem; }
+            .category { max-width: 100%; font-size: 0.75rem; }
+            .keypad input { font-size: 2rem; height: 4rem; }
+            .key { height: 40px; font-size: 1rem; }
+            #pin-keypad .key { height: 40px; font-size: 1.2rem; }
+        }
+    </style>
 </head>
 <body>
-  <!-- Schermata di blocco PIN -->
-  <div id="pin-lock-screen">
+<!-- Schermata di blocco PIN -->
+<div id="pin-lock-screen">
     <h2>Inserisci il PIN</h2>
     <div id="pin-display-container">
-      <div class="pin-digit" id="pin-digit-0"></div>
-      <div class="pin-digit" id="pin-digit-1"></div>
-      <div class="pin-digit" id="pin-digit-2"></div>
-      <div class="pin-digit" id="pin-digit-3"></div>
+        <div class="pin-digit" id="pin-digit-0"></div>
+        <div class="pin-digit" id="pin-digit-1"></div>
+        <div class="pin-digit" id="pin-digit-2"></div>
+        <div class="pin-digit" id="pin-digit-3"></div>
     </div>
     <div id="pin-keypad">
-      <div class="key" data-pin-value="1">1</div>
-      <div class="key" data-pin-value="2">2</div>
-      <div class="key" data-pin-value="3">3</div>
-      <div class="key" data-pin-value="4">4</div>
-      <div class="key" data-pin-value="5">5</div>
-      <div class="key" data-pin-value="6">6</div>
-      <div class="key" data-pin-value="7">7</div>
-      <div class="key" data-pin-value="8">8</div>
-      <div class="key" data-pin-value="9">9</div>
-      <!-- Modificato l'ordine per posizionare Enter sotto il 9 -->
-      <div class="key" id="pin-clear-button">C</div>
-      <div class="key" data-pin-value="0">0</div>
-      <div class="key" id="pin-enter-button">✔</div>
+        <div class="key" data-pin-value="1">1</div>
+        <div class="key" data-pin-value="2">2</div>
+        <div class="key" data-pin-value="3">3</div>
+        <div class="key" data-pin-value="4">4</div>
+        <div class="key" data-pin-value="5">5</div>
+        <div class="key" data-pin-value="6">6</div>
+        <div class="key" data-pin-value="7">7</div>
+        <div class="key" data-pin-value="8">8</div>
+        <div class="key" data-pin-value="9">9</div>
+        <div class="key" id="pin-clear-button">C</div>
+        <div class="key" data-pin-value="0">0</div>
+        <div class="key" id="pin-enter-button">✔</div>
     </div>
     <div id="pin-message"></div>
-  </div>
+</div>
 
-  <!-- Contenitore principale dell'applicazione (inizialmente nascosto) -->
-  <div class="container" id="main-app-container" style="display:none;">
+<!-- Contenitore principale dell'applicazione (inizialmente nascosto) -->
+<div class="container" id="main-app-container" style="display:none;">
     <div class="left">
-      <div class="categories" id="categories"></div>
+        <div class="categories" id="categories"></div>
     </div>
     <div class="center">
-      <!-- Area per i messaggi di risultato in alto -->
-      <div class="top-messages-area">
-        <div id="result"></div>
-      </div>
-
-      <!-- Area per l'input e il tastierino in basso -->
-      <div class="bottom-input-area">
-        <div class="keypad">
-          <input type="text" id="display" disabled />
-          <div class="key" data-value="7">7</div>
-          <div class="key" data-value="8">8</div>
-          <div class="key" data-value="9">9</div>
-          <div class="key" data-value="4">4</div>
-          <div class="key" data-value="5">5</div>
-          <div class="key" data-value="6">6</div>
-          <div class="key" data-value="1">1</div>
-          <div class="key" data-value="2">2</div>
-          <div class="key" data-value="3">3</div>
-          <div class="key" id="clear">C</div>
-          <div class="key" data-value="0">0</div>
-          <div class="key" data-value=".">.</div>
+        <div class="top-messages-area">
+            <div id="result"></div>
         </div>
-        <!-- Barra del report di invio file spostata qui -->
-        <div id="log"></div>
-        <textarea id="note" placeholder="Note..."></textarea>
-      </div>
+        <div class="bottom-input-area">
+            <div class="keypad">
+                <input type="text" id="display" disabled />
+                <div class="key" data-value="7">7</div>
+                <div class="key" data-value="8">8</div>
+                <div class="key" data-value="9">9</div>
+                <div class="key" data-value="4">4</div>
+                <div class="key" data-value="5">5</div>
+                <div class="key" data-value="6">6</div>
+                <div class="key" data-value="1">1</div>
+                <div class="key" data-value="2">2</div>
+                <div class="key" data-value="3">3</div>
+                <div class="key" id="clear">C</div>
+                <div class="key" data-value="0">0</div>
+                <div class="key" data-value=".">.</div>
+            </div>
+            <div id="log">Firebase non connesso</div>
+            <textarea id="note" placeholder="Note..."></textarea>
+        </div>
     </div>
     <div class="right">
-      <button class="cash" onclick="register('CASH')">CASH</button>
-      <button class="pos" onclick="register('POS')">POS</button>
-      <button class="uscite" onclick="register('USCITE')">USCITE</button>
-      <!-- Pulsante "Visualizza Storico" modificato per avere solo l'icona -->
-      <button class="history-button" onclick="caricaDaGoogle()">📖</button>
+        <button class="cash" onclick="register('CASH')">CASH</button>
+        <button class="pos" onclick="register('POS')">POS</button>
+        <button class="uscite" onclick="register('USCITE')">USCITE</button>
+        <button class="history-button" onclick="mostraStorico()">📖</button>
     </div>
-  </div>
-  
-  <!-- Overlay e Modal per lo Storico -->
-  <div id="popup-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9998;"></div>
-  <div id="storico-modal" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%); width:80%;
-      height:80%; background:#1e1e1e; color:white; overflow:auto; padding:1rem; border-radius:8px; z-index:9999;">
-    <button onclick="chiudiPopup()" style="position:absolute; top:1rem; right:1rem; font-size:1.2rem; background:#e74c3c; color:white; border:none; padding:0.5rem 1rem; cursor:pointer;">Chiudi</button>
+</div>
+
+<!-- Overlay e Modal per lo Storico -->
+<div id="popup-overlay"></div>
+<div id="storico-modal">
+    <button onclick="chiudiPopup()">Chiudi</button>
     <div id="storico-popup-content"></div>
-  </div>
-  
-<script>
-  // Funzione per chiudere la modal dello storico
-  function chiudiPopup() {
-    document.getElementById('popup-overlay').style.display = 'none';
-    document.getElementById('storico-modal').style.display = 'none';
-  }
+</div>
 
-  // Costanti per l'autenticazione PIN
-  const CORRECT_PIN = "1093"; // PIN aggiornato a 1093
-  let currentPinInput = "";
-  const pinDisplayDigits = [
-    document.getElementById("pin-digit-0"),
-    document.getElementById("pin-digit-1"),
-    document.getElementById("pin-digit-2"),
-    document.getElementById("pin-digit-3"),
-  ];
-  const pinMessage = document.getElementById("pin-message");
-  const pinLockScreen = document.getElementById("pin-lock-screen");
-  const mainAppContainer = document.getElementById("main-app-container");
+<!-- User ID Display -->
+<div id="user-id-display" style="display:none;"></div>
 
-  // Funzione per aggiornare il display del PIN
-  function updatePinDisplay() {
-    for (let i = 0; i < 4; i++) {
-      if (i < currentPinInput.length) {
-        pinDisplayDigits[i].classList.add("hidden-char"); // Mostra il punto
-      } else {
-        pinDisplayDigits[i].classList.remove("hidden-char"); // Nasconde il punto
-      }
-    }
-    pinMessage.textContent = ""; // Resetta il messaggio di errore
-  }
 
-  // Gestore eventi per il tastierino PIN
-  document.getElementById("pin-keypad").addEventListener("click", (event) => {
-    const target = event.target;
-    if (target.classList.contains("key")) {
-      const value = target.getAttribute("data-pin-value");
+<script type="module">
+    // Importa le funzioni necessarie dagli SDK di Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      if (value !== null) { // Tasti numerici (1-9, 0)
-        if (currentPinInput.length < 4) {
-          currentPinInput += value;
-          updatePinDisplay();
-        }
-      } else if (target.id === "pin-clear-button") { // Tasto Clear (C)
-        currentPinInput = "";
-        updatePinDisplay();
-      } else if (target.id === "pin-enter-button") { // Tasto Enter (✔)
-        if (currentPinInput === CORRECT_PIN) {
-          pinLockScreen.style.display = "none"; // Nasconde la schermata di blocco
-          mainAppContainer.style.display = "flex"; // Mostra l'applicazione principale
-        } else {
-          pinMessage.textContent = "PIN errato. Riprova.";
-          currentPinInput = ""; // Resetta l'input dopo un errore
-          updatePinDisplay();
-        }
-      }
-    }
-  });
+    // Configurazione di Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyDJI-Ib0FT6hMVlvZ6PHma_cSQ6BHlADoY",
+        authDomain: "cashapp-a7ef4.firebaseapp.com",
+        projectId: "cashapp-a7ef4",
+        storageBucket: "cashapp-a7ef4.firebasestorage.app",
+        messagingSenderId: "304839653644",
+        appId: "1:304839653644:web:fe270ff30acf9fdd1d7129",
+        measurementId: "G-FVCHR3CP37"
+    };
 
-  // Assicurati che la schermata di blocco sia visibile all'inizio
-  updatePinDisplay(); // Inizializza il display
-  pinLockScreen.style.display = "flex"; // Mostra la schermata di blocco all'avvio
+    // Inizializza Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  // Esegue il codice quando il DOM è completamente caricato
-  document.addEventListener("DOMContentLoaded", function () {
-    // Definisce le categorie disponibili
-    const categorie = [
-      'FOTOLAB', 
-      'PHOTOSI', 
-      'GRAFICA', 
-      'PANNELLI', 
-      'TIPOGRAFIA', 
-      'LASER', 
-      'MAGLIETTE', 
-      'CUSTOM'    
-    ];
-    const container = document.getElementById('categories'); // Ottiene il contenitore delle categorie
-    
-    // Genera i pulsanti per ogni categoria
-    categorie.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.textContent = cat;
-      btn.className = 'category';
-      btn.onclick = () => {
-        // Rimuove la classe 'active' da tutti i pulsanti categoria
-        document.querySelectorAll('.category').forEach(el => el.classList.remove('active'));
-        // Aggiunge la classe 'active' al pulsante cliccato
-        btn.classList.add('active');
-      };
-      container.appendChild(btn); // Aggiunge il pulsante al contenitore
-    });
+    // Variabili globali per l'app
+    let dbInstance = null;
+    let authInstance = null;
+    let userId = null;
 
-    let currentInput = ''; // Variabile per memorizzare l'input corrente del tastierino
-    const display = document.getElementById('display'); // Ottiene il riferimento all'input del display
+    // Costanti e variabili per il PIN
+    const CORRECT_PIN = "1093";
+    let currentPinInput = "";
+    const pinDisplayDigits = Array.from({ length: 4 }, (_, i) => document.getElementById(`pin-digit-${i}`));
+    const pinMessage = document.getElementById("pin-message");
+    const pinLockScreen = document.getElementById("pin-lock-screen");
+    const mainAppContainer = document.getElementById("main-app-container");
+    const logBox = document.getElementById('log');
+    const userIdDisplay = document.getElementById('user-id-display');
 
-    // Aggiunge event listener ai tasti del tastierino
-    document.querySelectorAll('.keypad .key').forEach(key => { // Target specifico per il tastierino principale
-      key.addEventListener('click', () => {
-        const value = key.getAttribute('data-value'); // Ottiene il valore associato al tasto
-        if (value) {
-          // Se è un valore numerico o il punto, aggiungi all'input corrente
-          currentInput += value;
-          display.value = currentInput;
-        } else if (key.id === 'clear') {
-          // Se è il tasto Clear, resetta l'input
-          currentInput = '';
-          display.value = '';
-        }
-      });
-    });
-
-    // Funzione per registrare un movimento (CASH, POS, USCITE)
-    window.register = function(type) {
-      const amount = parseFloat(currentInput); // Converte l'input in numero
-      const note = document.getElementById('note').value.trim(); // Ottiene il testo delle note e rimuove spazi bianchi
-      const resultBox = document.getElementById('result'); // Riferimento alla casella dei risultati
-      const categoryBtn = document.querySelector('.category.active'); // Ottiene la categoria attiva
-      const logBox = document.getElementById('log'); // Riferimento alla casella di log
-      
-      // Validazione: controlla se una categoria è stata selezionata
-      if (!categoryBtn) {
-        resultBox.innerText = 'Errore: Seleziona una categoria.';
-        resultBox.style.color = '#ff6347'; // Rosso per errore
-        return;
-      }
-      const category = categoryBtn.textContent;
-      
-      // Validazione specifica per la categoria 'CUSTOM'
-      if (category === 'CUSTOM' && note === '') { // Aggiornato il controllo della categoria
-        resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.';
-        resultBox.style.color = '#ff6347'; // Rosso per errore
-        return;
-      }
-
-      // Validazione: controlla se l'importo è un numero valido
-      if (isNaN(amount) || currentInput === '') {
-        resultBox.innerText = 'Errore: Inserire un importo valido.';
-        resultBox.style.color = '#ff6347'; // Rosso per errore
-        return;
-      }
-
-      // Prepara i dati del movimento
-      const now = new Date();
-      const data = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-      const movimento = {
-        data,
-        importo: type === 'USCITE' ? (-Math.abs(amount)).toFixed(2) : amount.toFixed(2), // Importo negativo per le uscite
-        categoria: category,
-        note,
-        tipo: type,
-        sync: false // Flag per la sincronizzazione con Google Sheet
-      };
-      
-      // Carica i movimenti esistenti da localStorage e aggiunge il nuovo
-      const storico = JSON.parse(localStorage.getItem('movimenti') || '[]');
-      storico.push(movimento);
-      localStorage.setItem('movimenti', JSON.stringify(storico)); // Salva nel localStorage
-
-      // Resetta l'interfaccia utente
-      currentInput = '';
-      display.value = '';
-      document.getElementById('note').value = '';
-      document.querySelectorAll('.category').forEach(el => el.classList.remove('active')); // Deseleziona la categoria
-      
-      // Mostra il messaggio di successo
-      resultBox.innerText = `Registrato: €${movimento.importo} - ${type} - ${category}`;
-      resultBox.style.color = '#90ee90'; // Verde chiaro per successo
-      
-      // Inizializza il log prima della sincronizzazione
-      logBox.innerText = 'Avvio sincronizzazione...';
-
-      // Inizia la sincronizzazione con Google Sheet
-      syncConSheet();
-    }
-
-    // Funzione per caricare i dati da Google Sheet e visualizzarli nella modal
-    window.caricaDaGoogle = function () {
-      const formatDate = (input) => {
-        const d = new Date(input);
-        // Controlla se la data è valida per evitare "Invalid Date"
-        return isNaN(d.getTime()) ? input : `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      };
-      const storicoBox = document.getElementById('storico-popup-content');
-      document.getElementById('popup-overlay').style.display = 'block'; // Mostra l'overlay
-      document.getElementById('storico-modal').style.display = 'block'; // Mostra la modal
-      const logBox = document.getElementById('log'); // Assicurati di riferirti al log corretto
-      
-      // URL dello script Google Apps per interfacciarsi con Google Sheet
-      const sheetUrl = 'https://script.google.com/macros/s/AKfycbx3RcApbbBIpRhd19SLs33Vrt2lJYBZlH5fN6sdaPKDeuGrQZ4FYlKI8kDpUI8ujPGn/exec';
-      
-      logBox.innerText = 'Caricamento movimenti da Google Sheet...';
-      storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
-
-      fetch(sheetUrl)
-        .then(response => {
-          if (!response.ok) throw new Error('Errore HTTP: ' + response.status);
-          return response.text(); // Legge la risposta come testo (CSV)
-        })
-        .then(csvText => {
-          // Processa il CSV: rimuove spazi e divide per riga, ignorando l'intestazione
-          let righe = csvText.trim().split(/\r?\n/).slice(1);
-          
-          if (righe.length === 0 || righe[0].trim() === '') { // Controlla anche righe vuote
-            storicoBox.innerHTML = '<p>Nessun movimento trovato nel foglio.</p>';
-            logBox.innerText = 'Nessun movimento trovato.';
-            return;
-          }
-
-          // Ordina le righe in base alla data, dal più recente al meno recente
-          // Assumiamo che la data sia nel formato MM/DD/YYYY o 
-          // Per un ordinamento corretto, convertiamo le date in oggetti Date per il confronto
-          righe.sort((a, b) => {
-            const dateA = new Date(a.split(',')[0].replace(/"/g, '').trim().split('/').reverse().join('-'));
-            const dateB = new Date(b.split(',')[0].replace(/"/g, '').trim().split('/').reverse().join('-'));
-            return dateB - dateA; // Dal più recente al meno recente
-          });
-          
-          let html = '<table><tr><th>Data</th><th>Importo</th><th>Categoria</th><th>Tipo</th><th>Note</th></tr>';
-          righe.forEach(riga => {
-            // Divide la riga CSV in colonne, rimuovendo le virgolette
-            const [data, importo, categoria, tipo, note] = riga.split(',').map(cell => cell.replace(/"/g, '').trim());
-            html += `<tr><td>${formatDate(data)}</td><td>€${importo}</td><td>${categoria}</td><td>${tipo}</td><td>${note}</td></tr>`;
-          });
-          html += '</table>';
-          storicoBox.innerHTML = html; // Inserisce la tabella HTML nella modal
-          logBox.innerText = 'Movimenti caricati da Google Sheet.';
-        })
-        .catch(err => {
-          // Gestione degli errori durante il fetch
-          storicoBox.innerHTML = '<p style="color: #ff6347;">Errore durante il caricamento dello storico.</p>';
-          logBox.innerText = 'Errore: ' + err.message;
+    // Funzione per aggiornare il display del PIN
+    function updatePinDisplay() {
+        pinDisplayDigits.forEach((digit, i) => {
+            digit.classList.toggle("hidden-char", i < currentPinInput.length);
         });
+        pinMessage.textContent = "";
     }
 
-    // Funzione per sincronizzare i movimenti non sincronizzati con Google Sheet
-    function syncConSheet() {
-      const sheetUrl = 'https://script.google.com/macros/s/AKfycbx3RcApbbBIpRhd19SLs33Vrt2lJYBZlH5fN6sdaPKDeuGrQZ4FYlKI8kDpUI8ujPGn/exec';
-      const movimenti = JSON.parse(localStorage.getItem('movimenti') || '[]');
-      const daSincronizzare = movimenti.filter(m => !m.sync); // Filtra i movimenti non ancora sincronizzati
-      const logBox = document.getElementById('log');
-      const resultBox = document.getElementById('result');
+    // Gestore per il tastierino del PIN
+    document.getElementById("pin-keypad").addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!target.classList.contains("key")) return;
 
-      if (daSincronizzare.length === 0) {
-        resultBox.innerText = 'Nessun movimento da sincronizzare.';
-        resultBox.style.color = '#90ee90';
-        logBox.innerText = '';
-        return;
-      }
-      
-      logBox.innerText = `Sincronizzazione di ${daSincronizzare.length} movimento/i...`;
-      let count = 0; // Contatore dei movimenti sincronizzati
-      let errors = 0; // Contatore degli errori di sincronizzazione
+        const value = target.getAttribute("data-pin-value");
 
-      daSincronizzare.forEach((m, i) => {
-        const formData = new FormData();
-        formData.append("data", m.data);
-        formData.append("importo", parseFloat(m.importo).toFixed(2));
-        formData.append("categoria", m.categoria);
-        formData.append("tipo", m.tipo);
-        formData.append("note", m.note);
-
-        fetch(sheetUrl, {
-          method: 'POST',
-          body: formData
-        }).then(resp => {
-          if (!resp.ok) {
-            // Se la risposta non è OK (es. status 404, 500), lancia un errore
-            throw new Error('HTTP error ' + resp.status);
-          }
-          return resp.text(); // Leggi la risposta per debug, se necessario
-        }).then(() => {
-          m.sync = true; // Imposta il flag di sincronizzazione a true
-          count++;
-        }).catch((err) => {
-          errors++;
-          console.error("Errore durante la sincronizzazione:", err);
-          logBox.innerText = `Errore di sincronizzazione per alcuni movimenti: ${err.message}`;
-          resultBox.innerText = 'Errore di sincronizzazione.';
-          resultBox.style.color = '#ff6347';
-        }).finally(() => {
-          // Questo blocco viene eseguito dopo ogni fetch, sia in caso di successo che di errore
-          if (count + errors === daSincronizzare.length) {
-            // Se tutti i movimenti sono stati processati
-            localStorage.setItem('movimenti', JSON.stringify(movimenti)); // Aggiorna localStorage
-            if (errors === 0) {
-              resultBox.innerText = `${count} movimento/i sincronizzato/i con Google Sheet.`;
-              resultBox.style.color = '#90ee90';
-              logBox.innerText = 'Tutti i movimenti sono stati sincronizzati con successo.';
-            } else {
-              resultBox.innerText = `${count} movimento/i sincronizzato/i, ${errors} errori.`;
-              resultBox.style.color = '#ff6347';
+        if (value) { // Tasti numerici
+            if (currentPinInput.length < 4) {
+                currentPinInput += value;
+                updatePinDisplay();
             }
-          }
+        } else if (target.id === "pin-clear-button") { // Tasto Clear
+            currentPinInput = "";
+            updatePinDisplay();
+        } else if (target.id === "pin-enter-button") { // Tasto Enter
+            if (currentPinInput === CORRECT_PIN) {
+                logBox.textContent = "PIN corretto. Accesso a Firebase in corso...";
+                try {
+                    await signInAnonymously(auth);
+                    // L'observer onAuthStateChanged gestirà il resto
+                } catch (error) {
+                    logBox.textContent = `Errore di autenticazione: ${error.message}`;
+                    pinMessage.textContent = "Errore di connessione a Firebase.";
+                }
+            } else {
+                pinMessage.textContent = "PIN errato. Riprova.";
+                currentPinInput = "";
+                updatePinDisplay();
+            }
+        }
+    });
+
+    // Observer per lo stato di autenticazione
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // L'utente è loggato (in modo anonimo)
+            userId = user.uid;
+            dbInstance = db; // Assegna l'istanza del db
+            authInstance = auth; // Assegna l'istanza di auth
+
+            logBox.textContent = `Connesso a Firebase.`;
+            userIdDisplay.textContent = `UserID: ${userId}`;
+            userIdDisplay.style.display = 'block';
+
+            pinLockScreen.style.display = "none";
+            mainAppContainer.style.display = "flex";
+
+            // Ora che siamo autenticati, possiamo iniziare ad ascoltare i dati
+            setupRealtimeListener();
+
+        } else {
+            // L'utente è disconnesso
+            userId = null;
+            dbInstance = null;
+            authInstance = null;
+
+            logBox.textContent = "Disconnesso. Inserisci il PIN per iniziare.";
+            userIdDisplay.style.display = 'none';
+
+            pinLockScreen.style.display = "flex";
+            mainAppContainer.style.display = "none";
+        }
+    });
+
+
+    // Esegue il codice quando il DOM è completamente caricato
+    document.addEventListener("DOMContentLoaded", () => {
+        // Inizializza la UI
+        setupUI();
+        updatePinDisplay();
+    });
+
+    // Funzione per impostare gli elementi della UI
+    function setupUI() {
+        const categories = ['FOTOLAB', 'PHOTOSI', 'GRAFICA', 'PANNELLI', 'TIPOGRAFIA', 'LASER', 'MAGLIETTE', 'CUSTOM'];
+        const container = document.getElementById('categories');
+        container.innerHTML = ''; // Pulisce le categorie esistenti
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.textContent = cat;
+            btn.className = 'category';
+            btn.onclick = () => {
+                document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+            };
+            container.appendChild(btn);
         });
-      });
+
+        let currentInput = '';
+        const display = document.getElementById('display');
+        document.querySelectorAll('.keypad .key').forEach(key => {
+            key.addEventListener('click', () => {
+                const value = key.getAttribute('data-value');
+                if (value) {
+                    // Impedisce punti multipli
+                    if (value === '.' && currentInput.includes('.')) return;
+                    currentInput += value;
+                    display.value = currentInput;
+                } else if (key.id === 'clear') {
+                    currentInput = '';
+                    display.value = '';
+                }
+            });
+        });
     }
-  });
+
+    // Funzione per registrare un movimento su Firestore
+    window.register = async function(type) {
+        if (!dbInstance || !userId) {
+            logBox.textContent = "Errore: Non connesso a Firebase.";
+            return;
+        }
+
+        const display = document.getElementById('display');
+        const amount = parseFloat(display.value);
+        const note = document.getElementById('note').value.trim();
+        const resultBox = document.getElementById('result');
+        const categoryBtn = document.querySelector('.category.active');
+
+        if (!categoryBtn) {
+            resultBox.innerText = 'Errore: Seleziona una categoria.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+        const category = categoryBtn.textContent;
+
+        if (category === 'CUSTOM' && note === '') {
+            resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+
+        if (isNaN(amount) || display.value === '') {
+            resultBox.innerText = 'Errore: Inserire un importo valido.';
+            resultBox.style.color = '#ff6347';
+            return;
+        }
+
+        const movimento = {
+            importo: type === 'USCITE' ? -Math.abs(amount) : amount,
+            categoria: category,
+            note: note,
+            tipo: type,
+            createdAt: serverTimestamp() // Usa il timestamp del server per l'ordinamento
+        };
+        
+        logBox.textContent = "Registrazione in corso...";
+        try {
+            const docRef = await addDoc(collection(dbInstance, "movimenti", userId, "transazioni"), movimento);
+            logBox.textContent = `Movimento registrato con ID: ${docRef.id}`;
+            
+            // Reset UI
+            display.value = '';
+            document.getElementById('note').value = '';
+            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            resultBox.innerText = `Registrato: €${movimento.importo.toFixed(2)} - ${type} - ${category}`;
+            resultBox.style.color = '#90ee90';
+
+        } catch (error) {
+            logBox.textContent = `Errore nella registrazione: ${error.message}`;
+            resultBox.innerText = 'Errore di registrazione.';
+            resultBox.style.color = '#ff6347';
+            console.error("Errore durante l'aggiunta del documento: ", error);
+        }
+    }
+
+    // Funzione per impostare il listener di Firestore e aggiornare la tabella dello storico
+    function setupRealtimeListener() {
+        if (!dbInstance || !userId) return;
+
+        const storicoBox = document.getElementById('storico-popup-content');
+        const q = query(collection(dbInstance, "movimenti", userId, "transazioni"), orderBy("createdAt", "desc"));
+
+        onSnapshot(q, (querySnapshot) => {
+            if (querySnapshot.empty) {
+                storicoBox.innerHTML = '<p>Nessun movimento trovato.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Data</th><th>Importo</th><th>Categoria</th><th>Tipo</th><th>Note</th></tr></thead><tbody>';
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const ts = data.createdAt ? data.createdAt.toDate() : new Date();
+                const formattedDate = ts.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                html += `
+                    <tr>
+                        <td>${formattedDate}</td>
+                        <td>€${data.importo.toFixed(2)}</td>
+                        <td>${data.categoria}</td>
+                        <td>${data.tipo}</td>
+                        <td>${data.note || ''}</td>
+                    </tr>
+                `;
+            });
+            html += '</tbody></table>';
+            storicoBox.innerHTML = html;
+        }, (error) => {
+            logBox.textContent = `Errore di connessione a Firestore: ${error.message}`;
+            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento dello storico.</p>`;
+        });
+    }
+
+    // Funzioni per la UI della modal
+    window.mostraStorico = function() {
+        document.getElementById('popup-overlay').style.display = 'block';
+        document.getElementById('storico-modal').style.display = 'block';
+    }
+
+    window.chiudiPopup = function() {
+        document.getElementById('popup-overlay').style.display = 'none';
+        document.getElementById('storico-modal').style.display = 'none';
+    }
+
 </script>
 </body>
 </html>
