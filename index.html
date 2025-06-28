@@ -53,57 +53,29 @@
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
         #storico-popup-content th { background: #333; font-weight: bold; }
         
-        /* Stili per la schermata di Login */
         #login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex; /* Modificato in flex per default */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            color: white;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10000; color: white;
         }
         #google-login-btn {
-            background-color: #4285F4;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            background-color: #4285F4; color: white; padding: 12px 24px; border: none;
+            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            transition: background-color 0.3s; display: flex; align-items: center; gap: 10px;
         }
-        #google-login-btn:hover {
-            background-color: #357ae8;
-        }
+        #google-login-btn:hover { background-color: #357ae8; }
+        
         #user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0,0,0,0.5);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            color: #ccc;
-            z-index: 10001;
+            position: fixed; top: 10px; right: 10px; display: flex; align-items: center;
+            gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px;
+            border-radius: 20px; font-size: 0.9em; color: #ccc; z-index: 10001;
         }
-        #user-info img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+        #user-info img { width: 30px; height: 30px; border-radius: 50%; }
+        #logout-btn {
+            background: transparent; border: none; font-size: 1.5rem;
+            cursor: pointer; padding: 0 5px; color: white;
         }
+        #logout-btn:hover { opacity: 0.8; }
 
         @media (max-width: 768px) { /* Stili responsivi ... */ }
     </style>
@@ -124,6 +96,7 @@
 <div id="user-info" style="display:none;">
     <img id="user-avatar" src="" alt="Avatar">
     <span id="user-name"></span>
+    <button id="logout-btn" title="Logout">🚪</button>
 </div>
 
 <!-- Contenitore principale dell'applicazione (inizialmente nascosto) -->
@@ -165,17 +138,13 @@
 <script type="module">
     // Importa le funzioni necessarie dagli SDK di Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, OAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, getAdditionalUserInfo, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     // --- CONFIGURAZIONE FOGLIO GOOGLE ---
-    // IMPORTANTE: Sostituisci questi valori con l'ID e il range del tuo foglio Google.
-    // L'ID si trova nell'URL del tuo foglio. Es: https://docs.google.com/spreadsheets/d/ID_FOGLIO/edit
     const SPREADSHEET_ID = 'SOSTITUISCI_CON_IL_TUO_ID_FOGLIO_GOOGLE';
-    // Il Range indica le celle da leggere. Es: 'NomeFoglio!A1:E100'
     const RANGE = 'Foglio1!A:E';
     // ------------------------------------
 
-    // Configurazione di Firebase (invariata)
     const firebaseConfig = {
         apiKey: "AIzaSyDJI-Ib0FT6hMVlvZ6PHma_cSQ6BHlADoY",
         authDomain: "cashapp-a7ef4.firebaseapp.com",
@@ -186,68 +155,58 @@
         measurementId: "G-FVCHR3CP37"
     };
 
-    // Inizializza Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-
-    // Aggiungi lo 'scope' per l'API di Google Sheets (sola lettura)
     provider.addScope('https://www.googleapis.com/auth/spreadsheets.readonly');
 
-    // Elementi del DOM
     const loginScreen = document.getElementById('login-screen');
     const mainAppContainer = document.getElementById('main-app-container');
     const googleLoginBtn = document.getElementById('google-login-btn');
     const logBox = document.getElementById('log');
     const userInfoDiv = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
     
     let oauthAccessToken = null;
 
-    // Gestore per il login con Google
     googleLoginBtn.addEventListener('click', () => {
         signInWithPopup(auth, provider)
-            .then((result) => {
-                // Login riuscito
-                const credential = GoogleAuthProvider.credentialFromResult(result);
-                oauthAccessToken = credential.accessToken;
+            .then(async (result) => {
+                const additionalUserInfo = getAdditionalUserInfo(result);
                 const user = result.user;
-                
-                logBox.textContent = 'Login effettuato con successo!';
-                // Il resto della UI viene gestito dall'observer onAuthStateChanged
+
+                if (additionalUserInfo.isNewUser) {
+                    logBox.textContent = 'Verifica utente fallita. Accesso negato.';
+                    await user.delete(); // Elimina l'utente non autorizzato appena creato.
+                    await signOut(auth); // Disconnette la sessione per sicurezza.
+                    alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
+                    oauthAccessToken = null; // Resetta il token.
+                } else {
+                    const credential = GoogleAuthProvider.credentialFromResult(result);
+                    oauthAccessToken = credential.accessToken;
+                    logBox.textContent = 'Login effettuato con successo!';
+                }
             }).catch((error) => {
-                // Gestione errori
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                const email = error.customData ? error.customData.email : 'N/A';
-                const credential = GoogleAuthProvider.credentialFromError(error);
-                logBox.textContent = `Errore di login: ${errorMessage}`;
-                console.error("Errore di login Google:", { errorCode, errorMessage, email, credential });
+                logBox.textContent = `Errore di login: ${error.message}`;
+                console.error("Errore di login Google:", error);
             });
     });
 
-    // Observer per lo stato di autenticazione
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth);
+    });
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // L'utente è loggato
             loginScreen.style.display = 'none';
             mainAppContainer.style.display = 'flex';
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
-            
-            // Se l'accessToken non è già stato salvato dal popup, prova a richiederlo di nuovo
-            // Questo potrebbe essere necessario se l'utente ricarica la pagina mentre è già loggato
             if (!oauthAccessToken) {
-                 user.getIdTokenResult().then(idTokenResult => {
-                    // Nota: getIdToken() non fornisce un access token per le API di Google.
-                    // Il modo migliore è salvarlo durante il signInWithPopup.
-                    // Questa parte è più complessa e per ora ci affidiamo all'accessToken ottenuto al primo login.
-                    logBox.textContent = `Bentornato, ${user.displayName}!`;
-                 });
+                logBox.textContent = `Bentornato, ${user.displayName}! Ricarica per interagire con Google Sheet.`;
             }
-
         } else {
-            // L'utente è disconnesso
             oauthAccessToken = null;
             loginScreen.style.display = 'flex';
             mainAppContainer.style.display = 'none';
@@ -260,7 +219,6 @@
         setupUI();
     });
 
-    // Imposta gli elementi della UI come categorie e tastierino
     function setupUI() {
         const categories = ['FOTOLAB', 'PHOTOSI', 'GRAFICA', 'PANNELLI', 'TIPOGRAFIA', 'LASER', 'MAGLIETTE', 'CUSTOM'];
         const container = document.getElementById('categories');
@@ -293,7 +251,6 @@
         });
     }
 
-    // Funzione per caricare i dati dal Foglio Google
     window.loadSheetData = async function() {
         if (!oauthAccessToken) {
             logBox.textContent = "Token di accesso non disponibile. Effettua nuovamente il login.";
@@ -316,39 +273,28 @@
 
         try {
             const response = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `Bearer ${oauthAccessToken}`
-                }
+                headers: { 'Authorization': `Bearer ${oauthAccessToken}` }
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(`Errore API Google: ${errorData.error.message}`);
             }
-
             const data = await response.json();
             const rows = data.values;
-
             if (!rows || rows.length === 0) {
                 storicoBox.innerHTML = '<p>Nessun dato trovato nel foglio.</p>';
                 logBox.textContent = 'Nessun dato trovato.';
                 return;
             }
-
-            // L'API di Sheets restituisce un array di array.
-            // La prima riga (rows[0]) può essere l'intestazione.
             const headers = rows[0];
             const dataRows = rows.slice(1);
-            
             let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             dataRows.forEach(row => {
                 html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
             });
             html += '</tbody></table>';
-            
             storicoBox.innerHTML = html;
             logBox.textContent = 'Dati caricati con successo.';
-
         } catch (error) {
             storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
             logBox.textContent = `Errore: ${error.message}`;
@@ -356,13 +302,11 @@
         }
     }
     
-    // Funzione di registrazione (attualmente disabilitata)
     window.register = function(type) {
         logBox.textContent = "Funzione di scrittura non ancora implementata per Google Sheets.";
         alert("La funzione per salvare nuovi dati su Google Sheets deve essere ancora implementata.");
     }
 
-    // Funzioni per la UI della modal
     window.chiudiPopup = function() {
         document.getElementById('popup-overlay').style.display = 'none';
         document.getElementById('storico-modal').style.display = 'none';
