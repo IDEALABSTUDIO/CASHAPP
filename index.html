@@ -298,7 +298,7 @@
 <script type="module">
     // Importa le funzioni necessarie dagli SDK di Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, getAdditionalUserInfo, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     // --- CONFIGURAZIONE FOGLIO GOOGLE ---
     const SPREADSHEET_ID = '1RB1XnHzwd4GC-xV4HIXu4WetmXfUp3hdjMwJVQTHPHY';
@@ -340,21 +340,11 @@
         googleLoginBtn.classList.add('loading');
 
         signInWithPopup(auth, provider)
-            .then(async (result) => {
-                const additionalUserInfo = getAdditionalUserInfo(result);
-                const user = result.user;
-
-                if (additionalUserInfo.isNewUser) {
-                    logBox.textContent = 'Verifica utente fallita. Accesso negato.';
-                    await user.delete();
-                    await signOut(auth);
-                    alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
-                    oauthAccessToken = null;
-                } else {
-                    const credential = GoogleAuthProvider.credentialFromResult(result);
-                    oauthAccessToken = credential.accessToken;
-                    logBox.textContent = 'Login effettuato con successo!';
-                }
+            .then((result) => {
+                // Accesso consentito a qualsiasi utente Google valido
+                const credential = GoogleAuthProvider.credentialFromResult(result);
+                oauthAccessToken = credential.accessToken;
+                logBox.textContent = 'Login effettuato con successo!';
             }).catch((error) => {
                 logBox.textContent = `Errore di login: ${error.message}`;
                 console.error("Errore di login Google:", error);
@@ -376,8 +366,14 @@
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
+            // Richiedi un nuovo token all'avvio se l'utente è già loggato
+            // per assicurarsi che non sia scaduto.
             if (!oauthAccessToken) {
-                logBox.textContent = `Bentornato, ${user.displayName}!`;
+                 user.getIdToken().then(token => {
+                    // Nota: questo è un ID token di Firebase, non un OAuth token per Sheets.
+                    // La logica per ottenere il token di accesso OAuth è corretta solo tramite il popup.
+                    logBox.textContent = `Bentornato, ${user.displayName}!`;
+                 });
             }
         } else {
             oauthAccessToken = null;
@@ -426,7 +422,7 @@
 
     window.loadSheetData = async function() {
         if (!oauthAccessToken) {
-            alert("Per favore, effettua nuovamente il login per leggere i dati.");
+            alert("Token di accesso non disponibile. Per favore, effettua nuovamente il login per aggiornare le autorizzazioni.");
             return;
         }
 
@@ -454,7 +450,7 @@
                 return;
             }
             const headers = rows[0];
-            const dataRows = rows.slice(1);
+            const dataRows = rows.slice(1).reverse(); // Mostra i più recenti prima
             let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             dataRows.forEach(row => {
                 html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
@@ -472,7 +468,7 @@
     // Funzione per registrare un nuovo movimento sul Foglio Google
     window.register = async function(type) {
         if (!oauthAccessToken) {
-            alert("Per favore, effettua nuovamente il login per salvare i dati.");
+            alert("Token di accesso non disponibile. Per favore, effettua nuovamente il login per aggiornare le autorizzazioni.");
             return;
         }
 
