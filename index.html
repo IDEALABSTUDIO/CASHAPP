@@ -18,6 +18,12 @@
         }
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
+
+        /* Allineamento simmetrico per i menu laterali */
+        .left, .right {
+            padding-top: 55px;
+        }
+
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
             flex-grow: 1;
@@ -35,8 +41,6 @@
             align-items: stretch;
             gap: 0.6rem;
             overflow-y: auto;
-            /* Aggiunto padding-top per fare spazio all'utente loggato */
-            padding-top: 55px;
         }
         .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; overflow-y: auto; }
         .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 1; flex-grow: 0; min-height: 30px; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 4px; text-align: center; font-size: 1rem; color: white; transition: background 0.3s ease; }
@@ -55,42 +59,55 @@
         .keypad input { grid-column: span 3; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 4px; }
         .key { height: 70px; background: #222; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.3s ease; }
         .key:hover { background: #3a3a3a; }
-        #clear { background: #e74c3c; }
-        #clear:hover { background: #c0392b; }
+        #clear { background: #EA4335; }
+        #clear:hover { background: #d93325; }
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
         .right button:hover { transform: translateY(-2px); }
-        .cash { background: #2ecc71; } .cash:hover { background: #27ae60; }
-        .pos { background: #3498db; } .pos:hover { background: #2980b9; }
-        .uscite { background: #e74c3c; } .uscite:hover { background: #c0392b; }
-        .history-button { height: 38px; padding: 0.2rem; background: #ffc107; color: #000; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
-        .history-button:hover { background: #e0a800; }
+
+        /* Pulsanti con colori Google */
+        .btn-google-green { background-color: #34A853; }
+        .btn-google-green:hover { background-color: #2e8f47; }
+        .btn-google-blue { background-color: #4285F4; }
+        .btn-google-blue:hover { background-color: #357ae8; }
+        .btn-google-red { background-color: #EA4335; }
+        .btn-google-red:hover { background-color: #d93325; }
+        .btn-google-yellow { background-color: #FBBC05; color: #202124; }
+        .btn-google-yellow:hover { background-color: #f2b000; }
+        
+        .history-button { height: 38px; padding: 0.2rem; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
+        
         #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
         #result { margin-top: 0.5rem; padding: 0.5rem; background: #333; border-radius: 4px; color: #90ee90; text-align: center; }
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
         #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 80%; height: 80%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
-        #storico-modal button:hover { background: #c0392b; }
+        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
+        #storico-modal button:hover { background: #d93325; }
         #storico-popup-content { margin-top: 3rem; }
         #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
         #storico-popup-content th { background: #333; font-weight: bold; }
 
-        /* Stili Login Screen Migliorati */
+        /* Stili Login Screen con Card */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column;
+            background: #111; display: flex;
             justify-content: center; align-items: center; z-index: 10000; color: white; text-align: center; padding: 1rem;
         }
-        .login-box {
+        .login-card {
+            background: rgba(30, 30, 30, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             animation: fadeIn 0.8s ease-in-out;
-            text-align: center;
         }
-        .login-box > * {
-             animation: slideUp 0.6s ease-out 0.2s backwards;
-        }
-         .login-box p { animation-delay: 0.3s; }
+        .login-box { text-align: center; }
+        .login-box > * { animation: slideUp 0.6s ease-out 0.2s backwards; }
+        .login-box p { animation-delay: 0.3s; }
         #google-login-btn { animation-delay: 0.4s; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -124,37 +141,28 @@
 
         /* Stili Modale di Conferma Logout */
         .confirm-overlay {
-            display: none; /* Nascosto di default */
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 10002;
             justify-content: center; align-items: center;
             animation: fadeIn 0.3s ease;
         }
         .confirm-modal {
-            background: #2c2c2c;
-            padding: 2rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            background: #2c2c2c; padding: 2rem; border-radius: 12px;
+            text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .confirm-modal p { margin: 0 0 1.5rem 0; font-size: 1.1rem; }
         .confirm-modal button {
-            padding: 0.7rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            margin: 0 0.5rem;
+            padding: 0.7rem 1.5rem; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 1rem; font-weight: bold;
+            transition: all 0.2s ease; margin: 0 0.5rem;
         }
-        #confirm-logout-btn { background: #e74c3c; color: white; }
-        #confirm-logout-btn:hover { background: #c0392b; transform: translateY(-2px); }
+        #confirm-logout-btn { background: #EA4335; color: white; }
+        #confirm-logout-btn:hover { background: #d93325; transform: translateY(-2px); }
         #cancel-logout-btn { background: #555; color: white; }
         #cancel-logout-btn:hover { background: #666; }
 
 
-        /* Stili per Tablet e schermi medi */
+        /* Media Queries per Responsività */
         @media (max-width: 1200px) {
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
@@ -163,10 +171,10 @@
             .keypad input { font-size: 3rem; height: 6rem; }
             .key { height: 60px; }
         }
-        /* Stili per schermi più piccoli */
         @media (max-width: 860px) {
-            .left { flex-basis: 140px; min-width: 120px; padding: 0.8rem; }
-            .right { flex-basis: 110px; min-width: 90px; padding: 0.8rem; gap: 0.5rem; }
+            .left, .right { padding: 0.8rem; padding-top: 55px; }
+            .left { flex-basis: 140px; min-width: 120px; }
+            .right { flex-basis: 110px; min-width: 90px; gap: 0.5rem; }
             .category { padding: 0.5rem; font-size: 0.8rem; min-height: 25px; }
             .right button { padding: 0.5rem; font-size: 0.9rem; min-height: 45px; }
             .history-button { height: 35px; font-size: 1.2rem; }
@@ -182,13 +190,15 @@
 <body>
 
 <div id="login-screen">
-    <div class="login-box">
-        <h2>Cash App</h2>
-        <p>Accedi per continuare</p>
-        <button id="google-login-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
-            <span>Accedi con Google</span>
-        </button>
+    <div class="login-card">
+        <div class="login-box">
+            <h2>Cash App</h2>
+            <p>Accedi per continuare</p>
+            <button id="google-login-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+                <span>Accedi con Google</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -221,10 +231,10 @@
         </div>
     </div>
     <div class="right">
-        <button class="cash" onclick="register('CASH')">CASH</button>
-        <button classs="pos" onclick="register('POS')">POS</button>
-        <button class="uscite" onclick="register('USCITE')">USCITE</button>
-        <button class="history-button" onclick="loadSheetData()">📖</button>
+        <button class="btn-google-green" onclick="register('CASH')">CASH</button>
+        <button class="btn-google-blue" onclick="register('POS')">POS</button>
+        <button class="btn-google-red" onclick="register('USCITE')">USCITE</button>
+        <button class="history-button btn-google-yellow" onclick="loadSheetData()">📖</button>
     </div>
 </div>
 
@@ -298,7 +308,6 @@
             });
     });
     
-    // Gestione Logout con modale di conferma
     logoutBtn.addEventListener('click', () => {
         logoutConfirmOverlay.style.display = 'flex';
     });
@@ -415,10 +424,10 @@
         const note = document.getElementById('note').value.trim();
         const resultBox = document.getElementById('result');
         const categoryBtn = document.querySelector('.category.active');
-        if (!categoryBtn) { resultBox.innerText = 'Errore: Seleziona una categoria.'; resultBox.style.color = '#ff6347'; return; }
+        if (!categoryBtn) { resultBox.innerText = 'Errore: Seleziona una categoria.'; resultBox.style.color = '#EA4335'; return; }
         const category = categoryBtn.textContent;
-        if (category === 'CUSTOM' && note === '') { resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultBox.style.color = '#ff6347'; return; }
-        if (isNaN(amount) || display.value === '') { resultBox.innerText = 'Errore: Inserire un importo valido.'; resultBox.style.color = '#ff6347'; return; }
+        if (category === 'CUSTOM' && note === '') { resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultBox.style.color = '#EA4335'; return; }
+        if (isNaN(amount) || display.value === '') { resultBox.innerText = 'Errore: Inserire un importo valido.'; resultBox.style.color = '#EA4335'; return; }
         const now = new Date();
         const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
         const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
@@ -439,7 +448,7 @@
         } catch (error) {
             logBox.textContent = `Errore nella registrazione: ${error.message}`;
             resultBox.innerText = 'Errore di registrazione.';
-            resultBox.style.color = '#ff6347';
+            resultBox.style.color = '#EA4335';
             console.error("Errore durante l'aggiunta della riga: ", error);
         }
     }
