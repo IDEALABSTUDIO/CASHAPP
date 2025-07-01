@@ -77,6 +77,21 @@
         }
         #logout-btn:hover { opacity: 0.8; }
 
+        /* Stili per Tablet */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .right button {
+                padding: 0.6rem; /* Riduciamo il padding */
+                font-size: 1rem; /* Riduciamo la dimensione del font */
+            }
+            .history-button {
+                font-size: 1.2rem; /* Riduciamo la dimensione dell'icona */
+            }
+            .left {
+                flex-basis: 200px; /* Stringiamo leggermente la colonna sinistra */
+            }
+        }
+
+        /* Stili per Mobile */
         @media (max-width: 768px) {
             html, body {
                 height: auto;
@@ -103,7 +118,6 @@
             .left {
                 order: 2;
                 height: auto;
-                padding-top: 0;
             }
             .right {
                 order: 3;
@@ -112,7 +126,6 @@
                 align-items: center;
                 justify-content: space-around;
                 gap: 0.8rem;
-                padding-top: 0;
             }
             .categories {
                 flex-direction: row;
