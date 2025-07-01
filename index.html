@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Tracker - Google Sheets</title>
+    <title>Payment Tracker</title>
     <style>
         /* CSS Invariato - Stessi stili di prima */
         * { box-sizing: border-box; }
@@ -12,7 +12,7 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             background: #111;
             color: #fff;
         }
@@ -52,135 +52,136 @@
         #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
         #storico-popup-content th { background: #333; font-weight: bold; }
-        
-        /* Stili Login Screen professionali */
+
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #1d2b34, #111);
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 10000; color: white;
-            text-align: center;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
+            background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10000; color: white; text-align: center; padding: 1rem;
         }
-        .login-box {
-            background: rgba(0,0,0,0.3);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            transform: translateY(20px);
-            opacity: 0;
-            animation: slideIn 0.6s 0.2s forwards;
-        }
-        .login-box .logo {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            color: #2ecc71;
-        }
-        .login-box h2 {
-            margin: 0 0 10px;
-            font-size: 2.5rem;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-        }
-        .login-box p {
-            margin-bottom: 30px;
-            color: #ccc;
-        }
-
         #google-login-btn {
             background-color: #4285F4; color: white; padding: 12px 24px; border: none;
-            border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
-            transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s; 
-            display: inline-flex; align-items: center; gap: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            transition: background-color 0.3s; display: flex; align-items: center; gap: 10px; margin-top: 1rem;
         }
-        #google-login-btn:hover { 
-            background-color: #5a9bff;
-            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
-            transform: translateY(-2px);
-        }
-        #google-login-btn:active {
-            transform: translateY(0);
-        }
-        #google-login-btn.loading {
-            background-color: #357ae8;
-            cursor: not-allowed;
-        }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4285F4;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
+        #google-login-btn:hover { background-color: #357ae8; }
+
         #user-info {
             position: fixed; top: 10px; right: 10px; display: flex; align-items: center;
-            gap: 12px; background: rgba(0,0,0,0.3); padding: 8px 12px;
-            border-radius: 25px; font-size: 0.9em; color: #ccc; z-index: 10001;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px);
+            gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px;
+            border-radius: 20px; font-size: 0.9em; color: #ccc; z-index: 10001;
         }
         #user-info img { width: 30px; height: 30px; border-radius: 50%; }
         #logout-btn {
-            background: transparent; border: none;
-            cursor: pointer; padding: 0; color: white;
-            display: flex; align-items: center; justify-content: center;
-            transition: color 0.3s;
+            background: transparent; border: none; font-size: 1.5rem;
+            cursor: pointer; padding: 0 5px; color: white;
         }
-        #logout-btn svg {
-            width: 22px; height: 22px;
+        #logout-btn:hover { opacity: 0.8; }
+
+        @media (max-width: 768px) {
+            html, body {
+                height: auto;
+                overflow: auto;
+            }
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+            .left, .center, .right {
+                flex-basis: auto;
+                max-width: 100%;
+                min-width: 100%;
+                overflow: visible;
+                padding: 0.8rem;
+            }
+            .center {
+                order: 1;
+                flex-grow: 0;
+                padding-bottom: 0;
+            }
+            .left {
+                order: 2;
+                height: auto;
+                padding-top: 0;
+            }
+            .right {
+                order: 3;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-around;
+                gap: 0.8rem;
+                padding-top: 0;
+            }
+            .categories {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem;
+                overflow-y: visible;
+                height: auto;
+            }
+            .category {
+                flex-grow: 1;
+                flex-basis: 100px;
+                padding: 0.5rem;
+                min-height: 40px;
+            }
+            .bottom-input-area {
+                margin-top: 0.5rem;
+            }
+            .keypad input {
+                font-size: 2.8rem;
+                height: 5.5rem;
+            }
+            .key {
+                height: 60px;
+                font-size: 1.3rem;
+            }
+            .right button {
+                flex-grow: 1;
+                flex-basis: 40%;
+                padding: 0.8rem;
+                font-size: 1rem;
+                min-height: 50px;
+            }
+            .history-button {
+                flex-basis: 100%;
+                margin-top: 0.5rem;
+            }
+            #storico-modal {
+                width: 95%;
+                height: 90%;
+                top: 2.5%;
+            }
+            #storico-popup-content th, #storico-popup-content td {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+            #user-info {
+               position: absolute;
+            }
         }
-        #logout-btn:hover { color: #e74c3c; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        @media (max-width: 768px) { /* Stili responsivi ... */ }
     </style>
 </head>
 <body>
 
-<!-- Schermata di Login con Google -->
 <div id="login-screen">
-    <div class="login-box">
-        <svg class="logo" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zM1 3.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-1zM15 6.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1 0-1h13a.5.5 0 0 1 .5.5zM15 9.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1 0-1h13a.5.5 0 0 1 .5.5zm-.5 2.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1 0-1h13a.5.5 0 0 1 .5.5z"/>
-        </svg>
-        <h2>Cash App</h2>
-        <p>Accedi con il tuo account Google per continuare</p>
-        <button id="google-login-btn">
-            <span class="btn-content">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
-                <span>Accedi con Google</span>
-            </span>
-            <div class="loader" style="display: none;"></div>
-        </button>
-    </div>
-</div>
-
-<!-- Informazioni utente loggato -->
-<div id="user-info" style="display:none;">
-    <img id="user-avatar" src="" alt="Avatar">
-    <span id="user-name"></span>
-    <button id="logout-btn" title="Logout">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-            <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
-        </svg>
+    <h2>Cash App</h2>
+    <p>Accedi per continuare</p>
+    <button id="google-login-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+        <span>Accedi con Google</span>
     </button>
 </div>
 
-<!-- Contenitore principale dell'applicazione (inizialmente nascosto) -->
+<div id="user-info" style="display:none;">
+    <img id="user-avatar" src="" alt="Avatar">
+    <span id="user-name"></span>
+    <button id="logout-btn" title="Logout">🚪</button>
+</div>
+
 <div class="container" id="main-app-container" style="display:none;">
     <div class="left">
         <div class="categories" id="categories"></div>
@@ -209,7 +210,6 @@
     </div>
 </div>
 
-<!-- Overlay e Modal per lo Storico -->
 <div id="popup-overlay"></div>
 <div id="storico-modal">
     <button onclick="chiudiPopup()">Chiudi</button>
@@ -249,17 +249,10 @@
     const logBox = document.getElementById('log');
     const userInfoDiv = document.getElementById('user-info');
     const logoutBtn = document.getElementById('logout-btn');
-    
+
     let oauthAccessToken = null;
 
     googleLoginBtn.addEventListener('click', () => {
-        const btnContent = googleLoginBtn.querySelector('.btn-content');
-        const loader = googleLoginBtn.querySelector('.loader');
-
-        btnContent.style.display = 'none';
-        loader.style.display = 'block';
-        googleLoginBtn.classList.add('loading');
-
         signInWithPopup(auth, provider)
             .then(async (result) => {
                 const additionalUserInfo = getAdditionalUserInfo(result);
@@ -267,23 +260,19 @@
 
                 if (additionalUserInfo.isNewUser) {
                     logBox.textContent = 'Verifica utente fallita. Accesso negato.';
-                    await user.delete();
-                    await signOut(auth);
+                    await user.delete(); // Elimina l'utente non autorizzato appena creato.
+                    await signOut(auth); // Disconnette la sessione per sicurezza.
                     alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
-                    oauthAccessToken = null;
+                    oauthAccessToken = null; // Resetta il token.
                 } else {
                     const credential = GoogleAuthProvider.credentialFromResult(result);
                     oauthAccessToken = credential.accessToken;
                     logBox.textContent = 'Login effettuato con successo!';
                 }
             }).catch((error) => {
-                logBox.textContent = `Errore di login: ${error.message}`;
-                console.error("Errore di login Google:", error);
-            }).finally(() => {
-                btnContent.style.display = 'inline-flex';
-                loader.style.display = 'none';
-                googleLoginBtn.classList.remove('loading');
-            });
+            logBox.textContent = `Errore di login: ${error.message}`;
+            console.error("Errore di login Google:", error);
+        });
     });
 
     logoutBtn.addEventListener('click', () => {
@@ -297,6 +286,8 @@
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
+            // Se l'utente è loggato ma non abbiamo il token (es. ricarica pagina),
+            // lo otterremo nuovamente al prossimo tentativo di login.
             if (!oauthAccessToken) {
                 logBox.textContent = `Bentornato, ${user.displayName}!`;
             }
@@ -389,7 +380,7 @@
             console.error("Errore fetch Google Sheets:", error);
         }
     }
-    
+
     // Funzione per registrare un nuovo movimento sul Foglio Google
     window.register = async function(type) {
         if (!oauthAccessToken) {
@@ -425,7 +416,7 @@
         const now = new Date();
         const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
         const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
-        
+
         const newRow = [dateString, finalAmount, category, type, note];
 
         const appendRange = 'Foglio1'; // Il nome del foglio a cui aggiungere dati.
@@ -453,7 +444,7 @@
             }
 
             const responseData = await response.json();
-            
+
             logBox.textContent = `Movimento registrato con successo!`;
             resultBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
             resultBox.style.color = '#90ee90';
