@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Cash Tracker - Google Sheets</title>
     <style>
         /* Base Styles */
@@ -12,59 +12,46 @@
             padding: 0;
             height: 100%;
             overflow: hidden;
-            font-family: sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background: #111;
             color: #fff;
         }
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
 
-        /* Allineamento simmetrico per i menu laterali */
+        /* Symmetrical padding for side menus */
         .left, .right {
             padding-top: 55px;
         }
 
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
-            flex-grow: 1;
-            background: #181818;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
+            flex-grow: 1; background: #181818; padding: 1rem;
+            display: flex; flex-direction: column; overflow-y: auto;
         }
         .right {
-            flex-basis: 180px;
-            min-width: 120px;
-            max-width: 20%;
-            justify-content: flex-start;
-            align-items: stretch;
-            gap: 0.6rem;
-            overflow-y: auto;
+            flex-basis: 180px; min-width: 120px; max-width: 20%;
+            justify-content: flex-start; align-items: stretch; gap: 0.6rem; overflow-y: auto;
         }
         .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; overflow-y: auto; }
-        .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 1; flex-grow: 0; min-height: 30px; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 4px; text-align: center; font-size: 1rem; color: white; transition: background 0.3s ease; }
-        .category:hover { background: #444; }
-        .category.active { background: #555; border: 2px solid #66bb6a; }
+        .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 6px; text-align: center; font-size: 1rem; color: white; transition: all 0.2s ease; }
+        .category:hover { background: #444; transform: translateY(-1px); }
+        .category.active { background: #555; border: 2px solid #34A853; }
         .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; }
         .bottom-input-area {
-            margin-top: auto;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            flex-shrink: 0;
+            margin-top: auto; width: 100%; display: flex;
+            flex-direction: column; gap: 0.8rem; flex-shrink: 0;
         }
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; width: 100%; }
-        .keypad input { grid-column: span 3; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 4px; }
-        .key { height: 70px; background: #222; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.3s ease; }
+        .keypad input { grid-column: span 3; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 8px; }
+        .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
         .right button:hover { transform: translateY(-2px); }
 
-        /* Pulsanti con colori Google */
+        /* Google Colors Buttons */
         .btn-google-green { background-color: #34A853; }
         .btn-google-green:hover { background-color: #2e8f47; }
         .btn-google-blue { background-color: #4285F4; }
@@ -89,7 +76,7 @@
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
         #storico-popup-content th { background: #333; font-weight: bold; }
 
-        /* Stili Login Screen con Card */
+        /* Enhanced Login Screen */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex;
@@ -99,14 +86,16 @@
             background: rgba(30, 30, 30, 0.5);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            padding: 3rem;
+            padding: 2.5rem 3rem;
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             animation: fadeIn 0.8s ease-in-out;
         }
         .login-box { text-align: center; }
         .login-box > * { animation: slideUp 0.6s ease-out 0.2s backwards; }
+        .login-box .icon { animation-delay: 0.1s; margin-bottom: 1rem; }
+        .login-box h2 { animation-delay: 0.2s; }
         .login-box p { animation-delay: 0.3s; }
         #google-login-btn { animation-delay: 0.4s; }
         
@@ -124,7 +113,7 @@
             box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
         }
 
-        /* Stili Logout Migliorati */
+        /* Enhanced Logout */
         #user-info {
             position: fixed; top: 10px; right: 10px; display: flex; align-items: center;
             gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px;
@@ -139,7 +128,6 @@
         #logout-btn:hover { background: rgba(255,255,255,0.1); }
         #logout-btn svg { width: 22px; height: 22px; }
 
-        /* Stili Modale di Conferma Logout */
         .confirm-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 10002;
@@ -162,7 +150,7 @@
         #cancel-logout-btn:hover { background: #666; }
 
 
-        /* Media Queries per Responsività */
+        /* Tablet Layout */
         @media (max-width: 1200px) {
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
@@ -171,19 +159,44 @@
             .keypad input { font-size: 3rem; height: 6rem; }
             .key { height: 60px; }
         }
-        @media (max-width: 860px) {
-            .left, .right { padding: 0.8rem; padding-top: 55px; }
-            .left { flex-basis: 140px; min-width: 120px; }
-            .right { flex-basis: 110px; min-width: 90px; gap: 0.5rem; }
-            .category { padding: 0.5rem; font-size: 0.8rem; min-height: 25px; }
-            .right button { padding: 0.5rem; font-size: 0.9rem; min-height: 45px; }
-            .history-button { height: 35px; font-size: 1.2rem; }
-            .keypad { gap: 0.3rem; }
-            .keypad input { font-size: 2.2rem; height: 4rem; }
-            .key { height: 45px; font-size: 1.1rem; }
-            .bottom-input-area { gap: 0.5rem; }
-            #log { margin: 0.5rem 0; font-size: 0.8rem; }
-            #note { padding: 0.4rem; font-size: 0.9rem; min-height: 40px; }
+        
+        /* Smartphone Layout */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .left, .right {
+                flex-basis: auto;
+                width: 100%;
+                max-width: 100%;
+                padding: 0.5rem 1rem; /* Reset padding */
+            }
+            .left {
+                order: 2;
+                border-top: 1px solid #444;
+            }
+            .right {
+                order: 3;
+            }
+            .center {
+                order: 1;
+                min-height: 0; /* Allow center to shrink */
+            }
+            .categories, .right {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                overflow-y: visible;
+                height: auto;
+            }
+            .category, .right button {
+                flex-grow: 1;
+                flex-basis: auto;
+            }
+            .keypad input { font-size: 2.5rem; height: 4.5rem; }
+            .key { height: 50px; font-size: 1.2rem; }
+            #note { min-height: 40px; }
         }
     </style>
 </head>
@@ -192,6 +205,9 @@
 <div id="login-screen">
     <div class="login-card">
         <div class="login-box">
+            <div class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 24 24" width="48px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            </div>
             <h2>Cash App</h2>
             <p>Accedi per continuare</p>
             <button id="google-login-btn">
@@ -245,7 +261,6 @@
         <button id="cancel-logout-btn">Annulla</button>
     </div>
 </div>
-
 <div id="popup-overlay"></div>
 <div id="storico-modal">
     <button onclick="chiudiPopup()">Chiudi</button>
