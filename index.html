@@ -31,11 +31,12 @@
             flex-basis: 180px;
             min-width: 120px;
             max-width: 20%;
-            /* Allineamento cambiato da 'center' a 'flex-start' */
             justify-content: flex-start;
             align-items: stretch;
             gap: 0.6rem;
             overflow-y: auto;
+            /* Aggiunto padding-top per fare spazio all'utente loggato */
+            padding-top: 55px;
         }
         .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; overflow-y: auto; }
         .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 1; flex-grow: 0; min-height: 30px; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 4px; text-align: center; font-size: 1rem; color: white; transition: background 0.3s ease; }
@@ -221,7 +222,7 @@
     </div>
     <div class="right">
         <button class="cash" onclick="register('CASH')">CASH</button>
-        <button class="pos" onclick="register('POS')">POS</button>
+        <button classs="pos" onclick="register('POS')">POS</button>
         <button class="uscite" onclick="register('USCITE')">USCITE</button>
         <button class="history-button" onclick="loadSheetData()">📖</button>
     </div>
