@@ -21,7 +21,7 @@
 
         /* Symmetrical padding for side menus */
         .left, .right {
-            padding-top: 75px; /* Increased padding */
+            padding-top: 75px;
         }
 
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
@@ -162,8 +162,13 @@
         
         /* Smartphone Layout */
         @media (max-width: 768px) {
+            html, body {
+                height: auto;
+                overflow: auto; /* Enable scrolling on mobile */
+            }
             .container {
                 flex-direction: column;
+                height: auto;
             }
             .left, .right {
                 flex-basis: auto;
@@ -180,7 +185,7 @@
             }
             .center {
                 order: 1;
-                min-height: 0; /* Allow center to shrink */
+                min-height: 0;
             }
             .categories, .right {
                 flex-direction: row;
