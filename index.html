@@ -19,6 +19,11 @@
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
 
+        /* Symmetrical padding for side menus */
+        .left, .right {
+            padding-top: 75px;
+        }
+
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
             flex-grow: 1; background: #181818; padding: 1rem;
@@ -38,19 +43,19 @@
             flex-direction: column; gap: 0.8rem; flex-shrink: 0;
         }
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
-        
+
         #display {
             grid-column: span 4; font-size: 3.5rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
             color: #fff; width: 100%; height: 7rem; border-radius: 8px;
             border: none; font-family: monospace;
         }
-        
+
         .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
-        #equals { background: #4285F4; }
+        #equals { background: #4285F4; grid-row: span 2; height: auto;}
         #equals:hover { background: #357ae8; }
 
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
@@ -64,17 +69,17 @@
         .btn-google-red:hover { background-color: #d93325; }
         .btn-google-yellow { background-color: #FBBC05; color: #202124; }
         .btn-google-yellow:hover { background-color: #f2b000; }
-        
+
         .history-button { height: 38px; padding: 0.2rem; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
-        
+
         #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
-        #result-message { 
-             padding: 0.5rem;
-             text-align: center; 
-             font-weight: bold;
-             min-height: 24px;
+        #result-message {
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: bold;
+            min-height: 24px;
         }
-        
+
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
@@ -126,7 +131,7 @@
         .login-box h2 { animation-delay: 0.2s; font-size: 2rem; }
         .login-box p { animation-delay: 0.3s; font-size: 1.1rem; color: #ccc; }
         #google-login-btn { animation-delay: 0.4s; }
-        
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
@@ -177,20 +182,17 @@
         #cancel-logout-btn:hover { background: #666; }
 
         /* --- RESPONSIVE STYLES --- */
-
-        /* Larger Desktops */
         @media (min-width: 1201px) {
             .left, .right {
                 padding-top: 75px;
             }
         }
         
-        /* Tablet (landscape) & Smaller Desktops */
         @media (max-width: 1200px) {
             .left, .right { padding-top: 20px; }
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
-            
+
             .category { padding: 0.6rem; font-size: 0.9rem;}
             .right button { font-size: 1rem; min-height: 45px; padding: 0.6rem;}
             .history-button { height: 34px; }
@@ -202,8 +204,7 @@
             #note { font-size: 0.9rem; }
             #user-info { padding: 4px 8px; font-size: 0.8em;}
         }
-        
-        /* Smartphone Layout */
+
         @media (max-width: 768px) {
             html, body {
                 height: auto;
@@ -352,27 +353,68 @@
     let oauthAccessToken = null;
     let currentInput = '';
 
-    googleLoginBtn.addEventListener('click', () => {
-        signInWithPopup(auth, provider)
-            .then(async (result) => {
-                const additionalUserInfo = getAdditionalUserInfo(result);
-                if (additionalUserInfo.isNewUser) {
-                    logBox.textContent = 'Verifica utente fallita. Accesso negato.';
-                    await result.user.delete();
-                    await signOut(auth);
-                    alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
-                    oauthAccessToken = null;
-                } else {
-                    const credential = GoogleAuthProvider.credentialFromResult(result);
-                    oauthAccessToken = credential.accessToken;
-                    logBox.textContent = 'Login effettuato con successo!';
-                }
-            }).catch((error) => {
-                logBox.textContent = `Errore di login: ${error.message}`;
-                console.error("Errore di login Google:", error);
-            });
+    // --- NEW: Token Refresh Logic ---
+    async function reauthenticateAndGetToken() {
+        try {
+            logBox.textContent = 'Sessione scaduta, rinnovo in corso...';
+            const result = await signInWithPopup(auth, provider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            if (credential?.accessToken) {
+                oauthAccessToken = credential.accessToken;
+                logBox.textContent = 'Sessione rinnovata.';
+                return oauthAccessToken;
+            }
+            throw new Error("Impossibile ottenere un nuovo token di accesso.");
+        } catch (error) {
+            logBox.textContent = `Errore di autenticazione: ${error.message}`;
+            oauthAccessToken = null;
+            return null;
+        }
+    }
+
+    async function authenticatedFetch(url, options = {}) {
+        if (!oauthAccessToken) {
+            const new_token = await reauthenticateAndGetToken();
+            if (!new_token) throw new Error("Autenticazione richiesta.");
+        }
+
+        options.headers = { ...options.headers, 'Authorization': `Bearer ${oauthAccessToken}` };
+
+        let response = await fetch(url, options);
+
+        if (response.status === 401) {
+            const new_token = await reauthenticateAndGetToken();
+            if (!new_token) throw new Error("Autenticazione fallita.");
+            
+            options.headers['Authorization'] = `Bearer ${new_token}`;
+            response = await fetch(url, options);
+        }
+        return response;
+    }
+
+
+    googleLoginBtn.addEventListener('click', async () => {
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const additionalUserInfo = getAdditionalUserInfo(result);
+
+            if (additionalUserInfo.isNewUser) {
+                logBox.textContent = 'Verifica utente fallita. Accesso negato.';
+                await result.user.delete();
+                await signOut(auth);
+                alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
+                oauthAccessToken = null;
+            } else if (credential?.accessToken) {
+                oauthAccessToken = credential.accessToken;
+                logBox.textContent = 'Login effettuato con successo!';
+            }
+        } catch(error) {
+            logBox.textContent = `Errore di login: ${error.message}`;
+            console.error("Errore di login Google:", error);
+        }
     });
-    
+
     logoutBtn.addEventListener('click', () => {
         logoutConfirmOverlay.style.display = 'flex';
     });
@@ -464,10 +506,6 @@
     }
 
     window.loadSheetData = async function() {
-        if (!oauthAccessToken) {
-            alert("Per favore, effettua nuovamente il login per leggere i dati.");
-            return;
-        }
         const storicoBox = document.getElementById('storico-popup-content');
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'block';
@@ -475,7 +513,7 @@
         logBox.textContent = 'Caricamento dati dal foglio Google...';
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
         try {
-            const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${oauthAccessToken}` } });
+            const response = await authenticatedFetch(apiUrl);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(`Errore API Google: ${errorData.error.message}`);
@@ -504,7 +542,6 @@
     }
 
     window.register = async function(type) {
-        if (!oauthAccessToken) { alert("Per favore, effettua nuovamente il login per salvare i dati."); return; }
         const resultMessageBox = document.getElementById('result-message');
         const note = document.getElementById('note').value.trim();
         const categoryBtn = document.querySelector('.category.active');
@@ -531,10 +568,10 @@
         const newRow = [dateString, finalAmount.toFixed(2), category, type, note];
         const appendRange = 'Foglio1';
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
-        const body = { values: [newRow] };
+        const body = JSON.stringify({ values: [newRow] });
         logBox.textContent = "Registrazione in corso...";
         try {
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Authorization': `Bearer ${oauthAccessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
             if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
             logBox.textContent = `Movimento registrato con successo!`;
             resultMessageBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
