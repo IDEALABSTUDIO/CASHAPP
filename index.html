@@ -19,15 +19,14 @@
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
 
-        /* Symmetrical padding for side menus */
         .left, .right {
-            padding-top: 75px;
+            padding-top: 60px;
         }
 
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
             flex-grow: 1; background: #181818; padding: 1rem;
-            display: flex; flex-direction: column; overflow-y: auto;
+            display: flex; flex-direction: column; overflow: hidden;
         }
         .right {
             flex-basis: 180px; min-width: 120px; max-width: 20%;
@@ -55,7 +54,7 @@
         .operator { background: #444; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
-        #equals { background: #4285F4; grid-row: span 2; height: auto;}
+        #equals { background: #4285F4; }
         #equals:hover { background: #357ae8; }
 
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
@@ -189,22 +188,19 @@
         }
         
         @media (max-width: 1200px) {
-            .left, .right { padding-top: 20px; }
-            .left { flex-basis: 200px; min-width: 150px; }
-            .right { flex-basis: 150px; min-width: 110px; }
+            .left, .right { padding-top: 60px; }
+            .left { flex-basis: 220px; min-width: 150px; }
+            .right { flex-basis: 160px; min-width: 110px; }
 
-            .category { padding: 0.6rem; font-size: 0.9rem;}
-            .right button { font-size: 1rem; min-height: 45px; padding: 0.6rem;}
-            .history-button { height: 34px; }
+            .category { padding: 0.7rem; font-size: 0.9rem;}
+            .right button { font-size: 1rem; min-height: 50px; padding: 0.8rem;}
+            .history-button { height: 36px; }
 
-            #display { font-size: 2.5rem; height: 5.5rem; }
-            .key { height: 55px; font-size: 1.1rem; }
-            #equals { font-size: 1.5rem; }
-            .bottom-input-area { gap: 0.5rem; }
-            #note { font-size: 0.9rem; }
-            #user-info { padding: 4px 8px; font-size: 0.8em;}
+            #display { font-size: 2.8rem; height: 6rem; }
+            .key { height: 60px; font-size: 1.3rem; }
+            #equals { font-size: 1.6rem; }
         }
-
+        
         @media (max-width: 768px) {
             html, body {
                 height: auto;
@@ -522,14 +518,14 @@
             }
             const headers = rows[0];
             const dataRows = rows.slice(1);
-            dataRows.reverse(); // Ordina per i più recenti in cima
+            dataRows.reverse(); 
 
             let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             dataRows.forEach(row => {
                 let rowHTML = '';
                 for (let i = 0; i < headers.length; i++) {
-                    let cellContent = row[i] || ''; // Usa stringa vuota per celle non definite
-                    if (i === 1) { // Formatta la colonna dell'importo
+                    let cellContent = row[i] || '';
+                    if (i === 1) { 
                         const amount = parseFloat(cellContent);
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
