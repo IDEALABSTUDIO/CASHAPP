@@ -306,6 +306,7 @@
     const logoutConfirmOverlay = document.getElementById('logout-confirm-overlay');
 
     let oauthAccessToken = null;
+    let currentInput = '';
 
     googleLoginBtn.addEventListener('click', () => {
         signInWithPopup(auth, provider)
@@ -380,7 +381,6 @@
             container.appendChild(btn);
         });
 
-        let currentInput = '';
         const display = document.getElementById('display');
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
@@ -462,9 +462,13 @@
             logBox.textContent = `Movimento registrato con successo!`;
             resultBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
             resultBox.style.color = '#90ee90';
+            
+            // Reset UI
             display.value = '';
+            currentInput = '';
             document.getElementById('note').value = '';
             document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+
         } catch (error) {
             logBox.textContent = `Errore nella registrazione: ${error.message}`;
             resultBox.innerText = 'Errore di registrazione.';
