@@ -19,6 +19,10 @@
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
 
+        .left, .right {
+            padding-top: 60px;
+        }
+
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
             flex-grow: 1; background: #181818; padding: 1rem;
@@ -40,18 +44,19 @@
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
         
         #display {
-            grid-column: span 4; font-size: 3.5rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
-            color: #fff; width: 100%; height: 7rem; border-radius: 8px;
+            grid-column: span 4; font-size: 3rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
+            color: #fff; width: 100%; height: 6rem; border-radius: 8px;
             border: none; font-family: monospace;
         }
         
-        .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
+        .key { height: 60px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.2rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
         #equals { background: #4285F4; }
         #equals:hover { background: #357ae8; }
+        #zero-key { grid-column: span 2; }
 
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
         .right button:hover { transform: translateY(-2px); }
@@ -177,27 +182,9 @@
         #cancel-logout-btn:hover { background: #666; }
 
         /* --- RESPONSIVE STYLES --- */
-        @media (min-width: 1201px) {
-            .left, .right {
-                padding-top: 75px;
-            }
-        }
-        
         @media (max-width: 1200px) {
-            .left, .right { padding-top: 60px; }
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
-            
-            .category { padding: 0.6rem; font-size: 0.9rem;}
-            .right button { font-size: 1rem; min-height: 45px; padding: 0.6rem;}
-            .history-button { height: 34px; }
-
-            #display { font-size: 2.5rem; height: 5rem; }
-            .key { height: 55px; font-size: 1.1rem; }
-            #equals { font-size: 1.5rem; }
-            .bottom-input-area { gap: 0.5rem; }
-            #note { font-size: 0.9rem; }
-            #user-info { padding: 4px 8px; font-size: 0.8em;}
         }
         
         @media (max-width: 768px) {
@@ -285,7 +272,7 @@
                 <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value="*">×</div>
                 <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value="-">-</div>
                 <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value="+">+</div>
-                <div class="key" data-value="0" style="grid-column: span 2;">0</div><div class="key" data-value=".">.</div><div class="key operator" id="equals">=</div>
+                <div class="key" id="zero-key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" id="equals">=</div>
             </div>
             <div id="log">Effettua il login per iniziare</div>
             <textarea id="note" placeholder="Note..."></textarea>
