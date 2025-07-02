@@ -36,22 +36,19 @@
         .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 6px; text-align: center; font-size: 1rem; color: white; transition: all 0.2s ease; }
         .category:hover { background: #444; transform: translateY(-1px); }
         .category.active { background: #555; border: 2px solid #34A853; }
-        
-        /* Moved message area to the top */
-        .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; order: 1; }
+        .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; min-height: 24px; }
         .bottom-input-area {
             margin-top: auto; width: 100%; display: flex;
-            flex-direction: column; gap: 0.8rem; flex-shrink: 0; order: 2;
+            flex-direction: column; gap: 0.8rem; flex-shrink: 0;
         }
-
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
-        
+
         #display {
             grid-column: span 4; font-size: 3rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
             color: #fff; width: 100%; height: 6rem; border-radius: 8px;
             border: none; font-family: monospace;
         }
-        
+
         .key { height: 60px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.2rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
@@ -72,17 +69,17 @@
         .btn-google-red:hover { background-color: #d93325; }
         .btn-google-yellow { background-color: #FBBC05; color: #202124; }
         .btn-google-yellow:hover { background-color: #f2b000; }
-        
+
         .history-button { height: 38px; padding: 0.2rem; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
-        
+
         #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
-        #result-message { 
-             padding: 0.5rem;
-             text-align: center; 
-             font-weight: bold;
-             min-height: 24px;
+        #result-message {
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: bold;
+            min-height: 24px;
         }
-        
+
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
@@ -134,7 +131,7 @@
         .login-box h2 { animation-delay: 0.2s; font-size: 2rem; }
         .login-box p { animation-delay: 0.3s; font-size: 1.1rem; color: #ccc; }
         #google-login-btn { animation-delay: 0.4s; }
-        
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
@@ -525,4 +522,69 @@
                 html += `<tr>${rowHTML}</tr>`;
             });
             html += '</tbody></table>';
-            stor
+            storicoBox.innerHTML = html;
+            logBox.textContent = 'Dati caricati con successo.';
+        } catch (error) {
+            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
+            logBox.textContent = `Errore: ${error.message}`;
+            console.error("Errore fetch Google Sheets:", error);
+        }
+    }
+
+    window.register = async function(type) {
+        const resultMessageBox = document.getElementById('result-message');
+        const note = document.getElementById('note').value.trim();
+        const categoryBtn = document.querySelector('.category.active');
+
+        let amount;
+        try {
+            amount = safeEval(currentInput);
+            if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
+                throw new Error("Risultato non valido.");
+            }
+        } catch (e) {
+            resultMessageBox.innerText = 'Errore: Espressione non valida.';
+            resultMessageBox.style.color = '#EA4335';
+            return;
+        }
+
+        if (!categoryBtn) { resultMessageBox.innerText = 'Errore: Seleziona una categoria.'; resultMessageBox.style.color = '#EA4335'; return; }
+        const category = categoryBtn.textContent;
+        if (category === 'CUSTOM' && note === '') { resultMessageBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultMessageBox.style.color = '#EA4335'; return; }
+
+        const now = new Date();
+        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
+        const newRow = [dateString, finalAmount, category, type, note];
+        const appendRange = 'Foglio1';
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
+        const body = JSON.stringify({ values: [newRow] });
+        logBox.textContent = "Registrazione in corso...";
+        try {
+            const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
+            logBox.textContent = `Movimento registrato con successo!`;
+            resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
+            resultMessageBox.style.color = '#34A853';
+
+            document.getElementById('display').value = '';
+            currentInput = '';
+            document.getElementById('note').value = '';
+            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            setTimeout(() => { resultMessageBox.innerHTML = ''; }, 3000);
+
+        } catch (error) {
+            logBox.textContent = `Errore nella registrazione: ${error.message}`;
+            resultMessageBox.innerText = 'Errore di registrazione.';
+            resultMessageBox.style.color = '#EA4335';
+            console.error("Errore durante l'aggiunta della riga: ", error);
+        }
+    }
+
+    window.chiudiPopup = function() {
+        document.getElementById('popup-overlay').style.display = 'none';
+        document.getElementById('storico-modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>
