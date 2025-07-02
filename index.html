@@ -327,4 +327,219 @@
     const mainAppContainer = document.getElementById('main-app-container');
     const googleLoginBtn = document.getElementById('google-login-btn');
     const logBox = document.getElementById('log');
-    const userInfoDiv = document.getElementById('
+    const userInfoDiv = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutConfirmOverlay = document.getElementById('logout-confirm-overlay');
+
+    let oauthAccessToken = null;
+    let currentInput = '';
+
+    googleLoginBtn.addEventListener('click', () => {
+        signInWithPopup(auth, provider)
+            .then(async (result) => {
+                const additionalUserInfo = getAdditionalUserInfo(result);
+                if (additionalUserInfo.isNewUser) {
+                    logBox.textContent = 'Verifica utente fallita. Accesso negato.';
+                    await result.user.delete();
+                    await signOut(auth);
+                    alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
+                    oauthAccessToken = null;
+                } else {
+                    const credential = GoogleAuthProvider.credentialFromResult(result);
+                    oauthAccessToken = credential.accessToken;
+                    logBox.textContent = 'Login effettuato con successo!';
+                }
+            }).catch((error) => {
+                logBox.textContent = `Errore di login: ${error.message}`;
+                console.error("Errore di login Google:", error);
+            });
+    });
+    
+    logoutBtn.addEventListener('click', () => {
+        logoutConfirmOverlay.style.display = 'flex';
+    });
+
+    document.getElementById('confirm-logout-btn').addEventListener('click', () => {
+        signOut(auth);
+        logoutConfirmOverlay.style.display = 'none';
+    });
+
+    document.getElementById('cancel-logout-btn').addEventListener('click', () => {
+        logoutConfirmOverlay.style.display = 'none';
+    });
+
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginScreen.style.display = 'none';
+            mainAppContainer.style.display = 'flex';
+            userInfoDiv.style.display = 'flex';
+            document.getElementById('user-name').textContent = user.displayName;
+            document.getElementById('user-avatar').src = user.photoURL;
+            if (!oauthAccessToken) {
+                logBox.textContent = `Bentornato, ${user.displayName}!`;
+            }
+        } else {
+            oauthAccessToken = null;
+            loginScreen.style.display = 'flex';
+            mainAppContainer.style.display = 'none';
+            userInfoDiv.style.display = 'none';
+            logBox.textContent = 'Effettua il login per iniziare';
+        }
+    });
+
+    function safeEval(expression) {
+        if (!expression) return null;
+        try {
+            const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+            return new Function('return ' + evalExpression)();
+        } catch (e) {
+            return 'Error';
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setupUI();
+    });
+
+    function setupUI() {
+        const categories = ['FOTOLAB', 'PHOTOSI', 'GRAFICA', 'PANNELLI', 'TIPOGRAFIA', 'LASER', 'MAGLIETTE', 'CUSTOM'];
+        const container = document.getElementById('categories');
+        container.innerHTML = '';
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.textContent = cat;
+            btn.className = 'category';
+            btn.onclick = () => {
+                document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+                btn.classList.add('active');
+            };
+            container.appendChild(btn);
+        });
+
+        const display = document.getElementById('display');
+        
+        document.querySelectorAll('.keypad .key').forEach(key => {
+            key.addEventListener('click', () => {
+                const value = key.getAttribute('data-value');
+
+                if (key.id === 'clear') {
+                    currentInput = '';
+                } else if (key.id === 'equals') {
+                    try {
+                        const result = safeEval(currentInput);
+                        if (result !== null && result !== 'Error') {
+                            currentInput = String(result);
+                        } else {
+                            currentInput = 'Error';
+                        }
+                    } catch (e) {
+                        currentInput = 'Error';
+                    }
+                } else {
+                    currentInput += value;
+                }
+                
+                display.value = currentInput.replace(/\*/g, '×').replace(/\//g, '÷');
+            });
+        });
+    }
+
+    window.loadSheetData = async function() {
+        if (!oauthAccessToken) {
+            alert("Per favore, effettua nuovamente il login per leggere i dati.");
+            return;
+        }
+        const storicoBox = document.getElementById('storico-popup-content');
+        document.getElementById('popup-overlay').style.display = 'block';
+        document.getElementById('storico-modal').style.display = 'block';
+        storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
+        logBox.textContent = 'Caricamento dati dal foglio Google...';
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
+        try {
+            const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${oauthAccessToken}` } });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Errore API Google: ${errorData.error.message}`);
+            }
+            const data = await response.json();
+            const rows = data.values;
+            if (!rows || rows.length === 0) {
+                storicoBox.innerHTML = '<p>Nessun dato trovato nel foglio.</p>';
+                logBox.textContent = 'Nessun dato trovato.';
+                return;
+            }
+            const headers = rows[0];
+            const dataRows = rows.slice(1);
+            let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+            dataRows.forEach(row => {
+                html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+            });
+            html += '</tbody></table>';
+            storicoBox.innerHTML = html;
+            logBox.textContent = 'Dati caricati con successo.';
+        } catch (error) {
+            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
+            logBox.textContent = `Errore: ${error.message}`;
+            console.error("Errore fetch Google Sheets:", error);
+        }
+    }
+
+    window.register = async function(type) {
+        if (!oauthAccessToken) { alert("Per favore, effettua nuovamente il login per salvare i dati."); return; }
+        const resultMessageBox = document.getElementById('result-message');
+        const note = document.getElementById('note').value.trim();
+        const categoryBtn = document.querySelector('.category.active');
+
+        let amount;
+        try {
+            amount = safeEval(currentInput);
+            if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
+                throw new Error("Risultato non valido.");
+            }
+        } catch (e) {
+            resultMessageBox.innerText = 'Errore: Espressione non valida.';
+            resultMessageBox.style.color = '#EA4335';
+            return;
+        }
+
+        if (!categoryBtn) { resultMessageBox.innerText = 'Errore: Seleziona una categoria.'; resultMessageBox.style.color = '#EA4335'; return; }
+        const category = categoryBtn.textContent;
+        if (category === 'CUSTOM' && note === '') { resultMessageBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultMessageBox.style.color = '#EA4335'; return; }
+        
+        const now = new Date();
+        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
+        const newRow = [dateString, finalAmount.toFixed(2), category, type, note];
+        const appendRange = 'Foglio1';
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
+        const body = { values: [newRow] };
+        logBox.textContent = "Registrazione in corso...";
+        try {
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Authorization': `Bearer ${oauthAccessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
+            logBox.textContent = `Movimento registrato con successo!`;
+            resultMessageBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
+            resultMessageBox.style.color = '#34A853';
+            
+            document.getElementById('display').value = '';
+            currentInput = '';
+            document.getElementById('note').value = '';
+            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            setTimeout(() => { resultMessageBox.innerHTML = ''; }, 3000);
+
+        } catch (error) {
+            logBox.textContent = `Errore nella registrazione: ${error.message}`;
+            resultMessageBox.innerText = 'Errore di registrazione.';
+            resultMessageBox.style.color = '#EA4335';
+            console.error("Errore durante l'aggiunta della riga: ", error);
+        }
+    }
+
+    window.chiudiPopup = function() {
+        document.getElementById('popup-overlay').style.display = 'none';
+        document.getElementById('storico-modal').style.display = 'none';
+    }
+</script>
+</body>
+</html>
