@@ -19,11 +19,6 @@
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
         .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
 
-        /* Symmetrical padding for side menus */
-        .left, .right {
-            padding-top: 75px;
-        }
-
         .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
         .center {
             flex-grow: 1; background: #181818; padding: 1rem;
@@ -33,7 +28,7 @@
             flex-basis: 180px; min-width: 120px; max-width: 20%;
             justify-content: flex-start; align-items: stretch; gap: 0.6rem; overflow-y: auto;
         }
-        .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; overflow-y: auto; }
+        .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; }
         .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 6px; text-align: center; font-size: 1rem; color: white; transition: all 0.2s ease; }
         .category:hover { background: #444; transform: translateY(-1px); }
         .category.active { background: #555; border: 2px solid #34A853; }
@@ -55,7 +50,7 @@
         .operator { background: #444; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
-        #equals { background: #4285F4; grid-row: span 2; height: auto;}
+        #equals { background: #4285F4; }
         #equals:hover { background: #357ae8; }
 
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
@@ -183,20 +178,29 @@
 
         /* --- RESPONSIVE STYLES --- */
 
+        /* Larger Desktops */
+        @media (min-width: 1201px) {
+            .left, .right {
+                padding-top: 75px;
+            }
+        }
+        
         /* Tablet (landscape) & Smaller Desktops */
         @media (max-width: 1200px) {
-            .left, .right { padding-top: 60px; }
+            .left, .right { padding-top: 20px; }
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
             
             .category { padding: 0.6rem; font-size: 0.9rem;}
-            .right button { font-size: 1rem; min-height: 50px; padding: 0.8rem;}
+            .right button { font-size: 1rem; min-height: 45px; padding: 0.6rem;}
+            .history-button { height: 34px; }
 
-            #display { font-size: 2.5rem; height: 5rem; }
-            .key { height: 55px; font-size: 1.2rem; }
+            #display { font-size: 2.5rem; height: 5.5rem; }
+            .key { height: 55px; font-size: 1.1rem; }
             #equals { font-size: 1.5rem; }
             .bottom-input-area { gap: 0.5rem; }
             #note { font-size: 0.9rem; }
+            #user-info { padding: 4px 8px; font-size: 0.8em;}
         }
         
         /* Smartphone Layout */
@@ -213,11 +217,11 @@
                 flex-basis: auto;
                 width: 100%;
                 max-width: 100%;
-                padding: 0.5rem 1rem;
+                padding: 0.8rem 1rem; /* Reset padding for mobile */
             }
             .left { order: 2; border-top: 1px solid #444; }
             .right { order: 3; }
-            .center { order: 1; min-height: 0; }
+            .center { order: 1; min-height: 0; padding: 0.5rem; }
             .categories, .right {
                 flex-direction: row;
                 flex-wrap: wrap;
@@ -229,10 +233,12 @@
             .category, .right button {
                 flex-grow: 1;
                 flex-basis: auto;
+                font-size: 0.8rem;
+                min-height: 40px;
             }
-            #display { font-size: 2.5rem; height: 5rem; }
-            .key { height: 60px; font-size: 1.2rem; }
-            #note { min-height: 40px; }
+            #display { font-size: 2.2rem; height: 4.5rem; }
+            .key { height: 50px; font-size: 1.1rem; }
+            #note { min-height: 40px; font-size: 1rem;}
         }
 
     </style>
