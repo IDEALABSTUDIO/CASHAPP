@@ -17,38 +17,44 @@
             color: #fff;
         }
         .container { display: flex; height: 100vh; flex-direction: row; overflow: hidden; }
-        .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; transition: all 0.3s ease; }
+        .left, .center, .right { background: #1e1e1e; display: flex; flex-direction: column; padding: 1rem; flex-shrink: 0; flex-grow: 0; }
+        
+        .left, .right { padding-top: 60px; }
+        .left { flex-basis: 240px; min-width: 160px; }
+        .center { flex-grow: 1; background: #181818; }
+        .right { flex-basis: 180px; min-width: 120px; gap: 0.6rem; }
 
-        .left, .right {
-            padding-top: 60px;
+        .categories { display: flex; flex-direction: column; gap: 0.5rem; height: 100%; overflow-y: auto; padding-right: 5px; }
+        .category { 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem;
+            background: #333;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .category:hover { background: #444; }
+        .category.active { border-color: #34A853; background: #444; }
+        .category .note-indicator {
+            color: #888;
+            font-size: 1.2rem;
+        }
+        .category.has-note .note-indicator {
+            color: #FBBC05;
         }
 
-        .left { flex-basis: 240px; min-width: 160px; max-width: 25%; justify-content: flex-start; }
-        .center {
-            flex-grow: 1; background: #181818; padding: 1rem;
-            display: flex; flex-direction: column; overflow-y: auto;
-        }
-        .right {
-            flex-basis: 180px; min-width: 120px; max-width: 20%;
-            justify-content: flex-start; align-items: stretch; gap: 0.6rem; overflow-y: auto;
-        }
-        .categories { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0.4rem; height: 100%; }
-        .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 6px; text-align: center; font-size: 1rem; color: white; transition: all 0.2s ease; }
-        .category:hover { background: #444; transform: translateY(-1px); }
-        .category.active { background: #555; border: 2px solid #34A853; }
-        .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; min-height: 24px; }
-        .bottom-input-area {
-            margin-top: auto; width: 100%; display: flex;
-            flex-direction: column; gap: 0.8rem; flex-shrink: 0;
-        }
+        .bottom-input-area { margin-top: auto; width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
-
+        
         #display {
             grid-column: span 4; font-size: 3rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
             color: #fff; width: 100%; height: 6rem; border-radius: 8px;
             border: none; font-family: monospace;
         }
-
+        
         .key { height: 60px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.2rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
@@ -69,23 +75,37 @@
         .btn-google-red:hover { background-color: #d93325; }
         .btn-google-yellow { background-color: #FBBC05; color: #202124; }
         .btn-google-yellow:hover { background-color: #f2b000; }
-
+        
         .history-button { height: 38px; padding: 0.2rem; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
-
-        #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
-        #result-message {
-            padding: 0.5rem;
-            text-align: center;
-            font-weight: bold;
-            min-height: 24px;
+        
+        #log { padding: 0.5rem; font-size: 0.9rem; color: #ccc; text-align: center; background: #333; border-radius: 4px; min-height: 38px; }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 10002;
+            justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
         }
-
-        #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
-        #popup-overlay, #storico-modal { display: none; position: fixed; }
-        #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
-        #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 80%; height: 80%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
-        #storico-modal button:hover { background: #d93325; }
+        .modal-content {
+            background: #2c2c2c; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center;
+            width: 90%; max-width: 400px;
+        }
+        .modal-content p { margin: 0 0 1.5rem 0; font-size: 1.1rem; }
+        .modal-content h3 { margin-top: 0; }
+        .modal-actions button {
+            padding: 0.7rem 1.5rem; border: none; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; font-weight: bold; transition: all 0.2s ease; margin: 0 0.5rem;
+        }
+        #note-modal-textarea {
+            width: 100%; min-height: 100px; background: #222; border: 1px solid #444;
+            color: #fff; border-radius: 4px; padding: 0.5rem; margin-bottom: 1rem; font-size: 1rem;
+        }
+        #save-note-btn { background-color: #34A853; color: white;}
+        #cancel-note-btn { background-color: #555; color: white;}
+        
+        #storico-modal { display: none; position: fixed; top: 5%; left: 50%; transform: translateX(-50%); width: 80%; height: 80%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; }
         #storico-popup-content { margin-top: 3rem; }
         #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
@@ -97,33 +117,19 @@
             justify-content: center; align-items: center; z-index: 10000; color: white; text-align: center; padding: 1rem;
             overflow: hidden;
         }
-        #aurora-background {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            filter: blur(100px) brightness(0.6);
-            z-index: -1;
-        }
-        .aurora-blob {
-            position: absolute; border-radius: 50%;
-            opacity: 0.5; mix-blend-mode: screen;
-        }
+        #aurora-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(100px) brightness(0.6); z-index: -1; }
+        .aurora-blob { position: absolute; border-radius: 50%; opacity: 0.5; mix-blend-mode: screen; }
         .blob1 { width: 40vw; height: 40vw; background: radial-gradient(circle, #4285F4, transparent 60%); animation: move1 25s infinite alternate; }
         .blob2 { width: 50vw; height: 50vw; background: radial-gradient(circle, #34A853, transparent 60%); animation: move2 30s infinite alternate; }
         .blob3 { width: 35vw; height: 35vw; background: radial-gradient(circle, #EA4335, transparent 60%); animation: move3 20s infinite alternate; }
-
         @keyframes move1 { from { transform: translate(-20%, -20%) rotate(0deg); } to { transform: translate(20%, 20%) rotate(180deg); } }
         @keyframes move2 { from { transform: translate(100%, 50%); } to { transform: translate(0%, 0%); } }
         @keyframes move3 { from { transform: translate(50%, 100%); } to { transform: translate(-10%, 40%); } }
 
         .login-card {
-            background-color: rgba(30, 30, 30, 0.5);
-            backdrop-filter: blur(40px) saturate(200%);
-            -webkit-backdrop-filter: blur(40px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem 3rem;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            animation: fadeIn 0.8s ease-in-out;
-            max-width: 450px;
+            background-color: rgba(30, 30, 30, 0.5); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 2.5rem 3rem; border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: fadeIn 0.8s ease-in-out; max-width: 450px;
         }
         .login-box { text-align: center; }
         .login-box > * { animation: slideUp 0.6s ease-out 0.2s backwards; }
@@ -131,99 +137,45 @@
         .login-box h2 { animation-delay: 0.2s; font-size: 2rem; }
         .login-box p { animation-delay: 0.3s; font-size: 1.1rem; color: #ccc; }
         #google-login-btn { animation-delay: 0.4s; }
-
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         #google-login-btn {
-            background-color: #4285F4; color: white; padding: 12px 24px; border: none;
-            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
-            transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; margin-top: 1.5rem;
+            background-color: #4285F4; color: white; padding: 12px 24px; border: none; border-radius: 4px; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; margin-top: 1.5rem;
         }
-        #google-login-btn:hover {
-            background-color: #357ae8;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
-        }
+        #google-login-btn:hover { background-color: #357ae8; transform: translateY(-3px); box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4); }
 
         #user-info {
-            position: fixed; top: 10px; right: 10px; display: flex; align-items: center;
-            gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px;
+            position: fixed; top: 10px; right: 10px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px;
             border-radius: 20px; font-size: 0.9em; color: #ccc; z-index: 10001;
         }
         #user-info img { width: 30px; height: 30px; border-radius: 50%; }
         #logout-btn {
-            background: transparent; border: none;
-            cursor: pointer; padding: 5px; color: white; display: flex; align-items: center; justify-content: center;
+            background: transparent; border: none; cursor: pointer; padding: 5px; color: white; display: flex; align-items: center; justify-content: center;
             transition: background 0.3s; border-radius: 50%;
         }
         #logout-btn:hover { background: rgba(255,255,255,0.1); }
         #logout-btn svg { width: 22px; height: 22px; }
 
-        .confirm-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 10002;
-            justify-content: center; align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-        .confirm-modal {
-            background: #2c2c2c; padding: 2rem; border-radius: 12px;
-            text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        .confirm-modal p { margin: 0 0 1.5rem 0; font-size: 1.1rem; }
-        .confirm-modal button {
-            padding: 0.7rem 1.5rem; border: none; border-radius: 8px;
-            cursor: pointer; font-size: 1rem; font-weight: bold;
-            transition: all 0.2s ease; margin: 0 0.5rem;
-        }
         #confirm-logout-btn { background: #EA4335; color: white; }
         #confirm-logout-btn:hover { background: #d93325; transform: translateY(-2px); }
         #cancel-logout-btn { background: #555; color: white; }
         #cancel-logout-btn:hover { background: #666; }
 
-        /* --- RESPONSIVE STYLES --- */
-        @media (max-width: 1200px) {
-            .left { flex-basis: 200px; min-width: 150px; }
-            .right { flex-basis: 150px; min-width: 110px; }
-        }
-
         @media (max-width: 768px) {
-            html, body {
-                height: auto;
-                overflow: auto;
-            }
-            .container {
-                flex-direction: column;
-                height: auto;
-            }
-            .left, .right {
-                flex-basis: auto;
-                width: 100%;
-                max-width: 100%;
-                padding: 0.8rem 1rem;
-            }
+            html, body { height: auto; overflow: auto; }
+            .container { flex-direction: column; height: auto; }
+            .left, .right { flex-basis: auto; width: 100%; max-width: 100%; padding: 0.8rem 1rem; }
             .left { order: 2; border-top: 1px solid #444; }
             .right { order: 3; }
             .center { order: 1; min-height: 0; padding: 0.5rem; }
-            .categories, .right {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                align-items: center;
-                overflow-y: visible;
-                height: auto;
-            }
-            .category, .right button {
-                flex-grow: 1;
-                flex-basis: auto;
-                font-size: 0.8rem;
-                min-height: 40px;
-            }
+            .categories, .right { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; overflow-y: visible; height: auto; }
+            .category-button, .right button { flex-grow: 1; flex-basis: auto; }
             #display { font-size: 2.2rem; height: 4.5rem; }
             .key { height: 50px; font-size: 1.1rem; }
-            #note { min-height: 40px; font-size: 1rem;}
         }
-
     </style>
 </head>
 <body>
@@ -262,9 +214,6 @@
         <div class="categories" id="categories"></div>
     </div>
     <div class="center">
-        <div class="top-messages-area">
-            <div id="result-message"></div>
-        </div>
         <div class="bottom-input-area">
             <div class="keypad">
                 <input type="text" id="display" readonly/>
@@ -274,8 +223,7 @@
                 <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value="+">+</div>
                 <div class="key" id="zero-key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" id="equals">=</div>
             </div>
-            <div id="log">Effettua il login per iniziare</div>
-            <textarea id="note" placeholder="Note..."></textarea>
+            <div id="log"></div>
         </div>
     </div>
     <div class="right">
@@ -286,11 +234,23 @@
     </div>
 </div>
 
-<div id="logout-confirm-overlay" class="confirm-overlay">
-    <div class="confirm-modal">
+<div id="logout-confirm-overlay" class="modal-overlay">
+    <div class="modal-content">
         <p>Sei sicuro di voler uscire?</p>
-        <button id="confirm-logout-btn">Sì, esci</button>
-        <button id="cancel-logout-btn">Annulla</button>
+        <div class="modal-actions">
+            <button id="confirm-logout-btn">Sì, esci</button>
+            <button id="cancel-logout-btn">Annulla</button>
+        </div>
+    </div>
+</div>
+<div id="note-modal-overlay" class="modal-overlay">
+    <div class="modal-content">
+        <h3 id="note-modal-title"></h3>
+        <textarea id="note-modal-textarea" placeholder="Inserisci una nota..."></textarea>
+        <div class="modal-actions">
+            <button id="save-note-btn">Salva Nota</button>
+            <button id="cancel-note-btn">Annulla</button>
+        </div>
     </div>
 </div>
 <div id="popup-overlay"></div>
@@ -328,100 +288,58 @@
     const userInfoDiv = document.getElementById('user-info');
     const logoutBtn = document.getElementById('logout-btn');
     const logoutConfirmOverlay = document.getElementById('logout-confirm-overlay');
+    const noteModalOverlay = document.getElementById('note-modal-overlay');
 
     let oauthAccessToken = null;
     let currentInput = '';
+    let notesByCategory = {};
+    let activeCategoryForNote = null;
 
-    async function reauthenticateAndGetToken() {
+    async function ensureToken() {
+        if (oauthAccessToken) return;
         try {
-            logBox.textContent = 'Sessione scaduta, rinnovo in corso...';
+            logBox.textContent = 'Autenticazione richiesta...';
             const result = await signInWithPopup(auth, provider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
-            if (credential?.accessToken) {
-                oauthAccessToken = credential.accessToken;
-                logBox.textContent = 'Sessione rinnovata.';
-                return oauthAccessToken;
-            }
-            throw new Error("Impossibile ottenere un nuovo token di accesso.");
+            if (!credential?.accessToken) throw new Error("Token non ricevuto.");
+            oauthAccessToken = credential.accessToken;
+            logBox.textContent = '';
         } catch (error) {
-            logBox.textContent = `Errore di autenticazione: ${error.message}`;
-            oauthAccessToken = null;
-            return null;
+            logBox.textContent = 'Autenticazione fallita.';
+            throw error;
         }
     }
-
-    async function authenticatedFetch(url, options = {}) {
-        if (!oauthAccessToken) {
-            const new_token = await reauthenticateAndGetToken();
-            if (!new_token) throw new Error("Autenticazione richiesta.");
-        }
-
-        options.headers = { ...options.headers, 'Authorization': `Bearer ${oauthAccessToken}` };
-
-        let response = await fetch(url, options);
-
-        if (response.status === 401) {
-            const new_token = await reauthenticateAndGetToken();
-            if (!new_token) throw new Error("Autenticazione fallita.");
-
-            options.headers['Authorization'] = `Bearer ${new_token}`;
-            response = await fetch(url, options);
-        }
-        return response;
-    }
-
 
     googleLoginBtn.addEventListener('click', async () => {
         try {
             const result = await signInWithPopup(auth, provider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
-            const additionalUserInfo = getAdditionalUserInfo(result);
-
-            if (additionalUserInfo.isNewUser) {
-                logBox.textContent = 'Verifica utente fallita. Accesso negato.';
+            if (getAdditionalUserInfo(result).isNewUser) {
                 await result.user.delete();
                 await signOut(auth);
-                alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
-                oauthAccessToken = null;
+                alert('Accesso non autorizzato.');
             } else if (credential?.accessToken) {
                 oauthAccessToken = credential.accessToken;
             }
         } catch(error) {
-            logBox.textContent = `Errore di login: ${error.message}`;
             console.error("Errore di login Google:", error);
         }
     });
 
-    logoutBtn.addEventListener('click', () => {
-        logoutConfirmOverlay.style.display = 'flex';
-    });
-
-    document.getElementById('confirm-logout-btn').addEventListener('click', () => {
-        signOut(auth);
-        logoutConfirmOverlay.style.display = 'none';
-    });
-
-    document.getElementById('cancel-logout-btn').addEventListener('click', () => {
-        logoutConfirmOverlay.style.display = 'none';
-    });
-
+    logoutBtn.addEventListener('click', () => { logoutConfirmOverlay.style.display = 'flex'; });
+    document.getElementById('confirm-logout-btn').addEventListener('click', () => { signOut(auth); logoutConfirmOverlay.style.display = 'none'; });
+    document.getElementById('cancel-logout-btn').addEventListener('click', () => { logoutConfirmOverlay.style.display = 'none'; });
 
     onAuthStateChanged(auth, (user) => {
+        mainAppContainer.style.display = user ? 'flex' : 'none';
+        loginScreen.style.display = user ? 'flex' : 'none';
         if (user) {
-            loginScreen.style.display = 'none';
-            mainAppContainer.style.display = 'flex';
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
-            if (!oauthAccessToken) {
-                logBox.textContent = `Bentornato, ${user.displayName}!`;
-            }
         } else {
             oauthAccessToken = null;
-            loginScreen.style.display = 'flex';
-            mainAppContainer.style.display = 'none';
             userInfoDiv.style.display = 'none';
-            logBox.textContent = 'Effettua il login per iniziare';
         }
     });
 
@@ -444,39 +362,58 @@
         const container = document.getElementById('categories');
         container.innerHTML = '';
         categories.forEach(cat => {
-            const btn = document.createElement('button');
-            btn.textContent = cat;
-            btn.className = 'category';
-            btn.onclick = () => {
-                document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            const btn = document.createElement('div');
+            btn.className = 'category-button';
+            btn.dataset.category = cat;
+            btn.innerHTML = `<span class="category-label">${cat}</span><span class="category-note-trigger">📝</span>`;
+            
+            btn.addEventListener('click', (e) => {
+                const categoryName = btn.dataset.category;
+                const wasActive = btn.classList.contains('active');
+                
+                // Always select the category on the main part of the button
+                document.querySelectorAll('.category-button.active').forEach(el => el.classList.remove('active'));
                 btn.classList.add('active');
-            };
+
+                // If the note trigger is clicked OR the button was already active, open the modal
+                if (e.target.classList.contains('category-note-trigger') || wasActive) {
+                    activeCategoryForNote = categoryName;
+                    document.getElementById('note-modal-title').textContent = `Aggiungi Nota per ${categoryName}`;
+                    document.getElementById('note-modal-textarea').value = notesByCategory[categoryName] || '';
+                    noteModalOverlay.style.display = 'flex';
+                }
+            });
             container.appendChild(btn);
         });
 
-        const display = document.getElementById('display');
+        document.getElementById('save-note-btn').addEventListener('click', () => {
+            const noteText = document.getElementById('note-modal-textarea').value;
+            notesByCategory[activeCategoryForNote] = noteText;
+            const categoryButton = document.querySelector(`.category-button[data-category="${activeCategoryForNote}"]`);
+            if (noteText.trim()) {
+                categoryButton.classList.add('has-note');
+            } else {
+                categoryButton.classList.remove('has-note');
+            }
+            noteModalOverlay.style.display = 'none';
+        });
 
+        document.getElementById('cancel-note-btn').addEventListener('click', () => {
+            noteModalOverlay.style.display = 'none';
+        });
+
+        const display = document.getElementById('display');
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
-
                 if (key.id === 'clear') {
                     currentInput = '';
                 } else if (key.id === 'equals') {
-                    try {
-                        const result = safeEval(currentInput);
-                        if (result !== null && result !== 'Error') {
-                            currentInput = String(result);
-                        } else {
-                            currentInput = 'Error';
-                        }
-                    } catch (e) {
-                        currentInput = 'Error';
-                    }
+                    const result = safeEval(currentInput);
+                    currentInput = (result !== null && result !== 'Error') ? String(result) : 'Error';
                 } else {
                     currentInput += value;
                 }
-
                 display.value = currentInput.replace(/\*/g, '×').replace(/\//g, '÷');
             });
         });
@@ -487,97 +424,96 @@
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'block';
         storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
-        logBox.textContent = 'Caricamento dati dal foglio Google...';
-        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
+        
         try {
-            const response = await authenticatedFetch(apiUrl);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Errore API Google: ${errorData.error.message}`);
-            }
+            await ensureToken();
+            const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
+            const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${oauthAccessToken}` } });
+            if (!response.ok) throw new Error((await response.json()).error.message);
+            
             const data = await response.json();
             const rows = data.values;
             if (!rows || rows.length === 0) {
-                storicoBox.innerHTML = '<p>Nessun dato trovato nel foglio.</p>';
-                logBox.textContent = 'Nessun dato trovato.';
+                storicoBox.innerHTML = '<p>Nessun dato trovato.</p>';
                 return;
             }
             const headers = rows[0];
-            const dataRows = rows.slice(1);
-            dataRows.reverse();
+            const dataRows = rows.slice(1).reverse();
 
             let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             dataRows.forEach(row => {
                 let rowHTML = '';
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
-                    if (i === 1) {
+                    if (i === 1) { 
                         const amount = parseFloat(cellContent);
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
                         }
                     }
-                    rowHTML += `<td>${cellContent}</td>`;
+                     rowHTML += `<td>${cellContent}</td>`;
                 }
                 html += `<tr>${rowHTML}</tr>`;
             });
             html += '</tbody></table>';
             storicoBox.innerHTML = html;
-            logBox.textContent = 'Dati caricati con successo.';
         } catch (error) {
-            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
-            logBox.textContent = `Errore: ${error.message}`;
+            storicoBox.innerHTML = `<p style="color: #ff6347;">Errore: ${error.message}</p>`;
             console.error("Errore fetch Google Sheets:", error);
         }
     }
 
     window.register = async function(type) {
-        const resultMessageBox = document.getElementById('result-message');
-        const note = document.getElementById('note').value.trim();
-        const categoryBtn = document.querySelector('.category.active');
-
-        let amount;
+        const categoryBtn = document.querySelector('.category-button.active');
+        logBox.textContent = '';
+        
         try {
-            amount = safeEval(currentInput);
+            if (!categoryBtn) throw new Error("Seleziona una categoria.");
+            const category = categoryBtn.dataset.category;
+            const note = notesByCategory[category] || '';
+            let amount = safeEval(currentInput);
+
             if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
-                throw new Error("Risultato non valido.");
+                throw new Error("Importo non valido.");
             }
-        } catch (e) {
-            resultMessageBox.innerText = 'Errore: Espressione non valida.';
-            resultMessageBox.style.color = '#EA4335';
-            return;
-        }
+            if (category === 'CUSTOM' && note === '') throw new Error("Inserire una nota per la categoria CUSTOM.");
 
-        if (!categoryBtn) { resultMessageBox.innerText = 'Errore: Seleziona una categoria.'; resultMessageBox.style.color = '#EA4335'; return; }
-        const category = categoryBtn.textContent;
-        if (category === 'CUSTOM' && note === '') { resultMessageBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultMessageBox.style.color = '#EA4335'; return; }
+            await ensureToken();
+            
+            const now = new Date();
+            const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+            const finalAmount = type === 'USCITE' ? -Math.abs(amount) : finalAmount;
+            const newRow = [dateString, finalAmount, category, type, note];
+            const appendRange = 'Foglio1';
+            const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
+            const body = JSON.stringify({ values: [newRow] });
 
-        const now = new Date();
-        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
-        const newRow = [dateString, finalAmount, category, type, note];
-        const appendRange = 'Foglio1';
-        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
-        const body = JSON.stringify({ values: [newRow] });
-        logBox.textContent = "Registrazione in corso...";
-        try {
-            const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
-            logBox.textContent = `Movimento registrato con successo!`;
-            resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
-            resultMessageBox.style.color = '#34A853';
+            logBox.textContent = "Registrazione in corso...";
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${oauthAccessToken}` }, body });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                if(errorData?.error?.status === 'UNAUTHENTICATED') {
+                    oauthAccessToken = null;
+                    throw new Error("Sessione scaduta. Riprova.");
+                }
+                throw new Error(errorData?.error?.message || "Errore sconosciuto.");
+            }
 
-            document.getElementById('display').value = '';
+            logBox.textContent = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}`;
+            
             currentInput = '';
-            document.getElementById('note').value = '';
-            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
-            setTimeout(() => { resultMessageBox.innerHTML = ''; }, 3000);
+            document.getElementById('display').value = '';
+            notesByCategory = {};
+            document.querySelectorAll('.category-button.active, .category-button.has-note').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('has-note');
+            });
+            setTimeout(() => { logBox.textContent = ''; }, 3000);
 
         } catch (error) {
-            logBox.textContent = `Errore nella registrazione: ${error.message}`;
-            resultMessageBox.innerText = 'Errore di registrazione.';
-            resultMessageBox.style.color = '#EA4335';
-            console.error("Errore durante l'aggiunta della riga: ", error);
+            logBox.textContent = `Errore: ${error.message}`;
+            console.error("Errore durante la registrazione:", error);
         }
     }
 
