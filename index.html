@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Cash Tracker - Google Sheets</title>
+    <title>Payment Tracker - Google Sheets</title>
     <style>
         /* Base Styles */
         * { box-sizing: border-box; }
@@ -43,7 +43,15 @@
             flex-direction: column; gap: 0.8rem; flex-shrink: 0;
         }
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
-        .keypad input { grid-column: span 4; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 8px; }
+        
+        /* New Display Box Style */
+        .display-box {
+            grid-column: span 4; font-size: 2.5rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
+            color: #fff; width: 100%; height: 7rem; border-radius: 8px;
+            overflow-x: auto; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end;
+        }
+        .display-box .operator-char { color: #4285F4; margin: 0 0.2em; }
+
         .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
@@ -67,9 +75,13 @@
         #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
         #result { 
             margin-top: 0.5rem; padding: 0.5rem; background: #181818; 
-            border-radius: 4px; color: #90ee90; text-align: right; 
-            font-size: 1.2rem; font-weight: bold; height: 30px;
+            border-radius: 4px; text-align: right; 
+            font-size: 1.2rem; height: 30px;
         }
+        .result-paren { color: #FBBC05; font-weight: bold; }
+        .result-equals { color: #4285F4; }
+        .result-value { color: #34A853; font-weight: bold; }
+
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
@@ -180,7 +192,7 @@
             .right { flex-basis: 150px; min-width: 110px; }
             .category, .right button { padding: 0.6rem; font-size: 0.9rem; }
             .right button { font-size: 1rem; min-height: 50px; }
-            .keypad input { font-size: 3rem; height: 6rem; }
+            .display-box { font-size: 2rem; height: 6rem; }
             .key { height: 60px; }
         }
         
@@ -224,7 +236,7 @@
                 flex-basis: auto;
             }
             .keypad { grid-template-columns: repeat(4, 1fr); }
-            .keypad input { font-size: 2.5rem; height: 4.5rem; }
+            .display-box { font-size: 2rem; height: 4.5rem; }
             .key { height: 50px; font-size: 1.2rem; }
             #note { min-height: 40px; }
         }
@@ -243,7 +255,7 @@
             <div class="icon">
                 <svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 24 24" width="48px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             </div>
-            <h2>Cash App</h2>
+            <h2>Payment Tracker</h2>
             <p>Accedi per continuare</p>
             <button id="google-login-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
@@ -271,7 +283,7 @@
         </div>
         <div class="bottom-input-area">
             <div class="keypad">
-                <input type="text" id="display" disabled />
+                <div id="display" class="display-box"></div>
                 <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value=" / ">&divide;</div>
                 <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value=" * ">&times;</div>
                 <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value=" - ">-</div>
@@ -397,7 +409,9 @@
             return null;
         }
         try {
-            return new Function('return ' + expression)();
+            // Replace visual operators with standard ones for evaluation
+            const standardExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+            return new Function('return ' + standardExpression)();
         } catch (e) {
             return null;
         }
@@ -427,12 +441,20 @@
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
+                const visualValue = key.innerHTML; // Use innerHTML to get ÷ and ×
+
                 if (value) {
                     currentInput += value;
-                    display.value = currentInput;
+                    const span = document.createElement('span');
+                    span.textContent = visualValue;
+                    if (key.classList.contains('operator')) {
+                        span.className = 'operator-char';
+                    }
+                    display.appendChild(span);
+
                 } else if (key.id === 'clear') {
                     currentInput = '';
-                    display.value = '';
+                    display.innerHTML = '';
                 }
                 
                 // Live calculation preview
@@ -441,7 +463,13 @@
                 } else {
                     const result = safeEval(currentInput);
                     if (result !== null && typeof result === 'number' && isFinite(result)) {
-                        resultBox.innerHTML = `= ${result.toLocaleString('it-IT', { maximumFractionDigits: 2 })}`;
+                        const formattedResult = result.toLocaleString('it-IT', { maximumFractionDigits: 2 });
+                        resultBox.innerHTML = `
+                            <span class="result-paren">(</span>
+                            <span class="result-equals">= </span>
+                            <span class="result-value">${formattedResult}</span>
+                            <span class="result-paren">)</span>
+                        `;
                     } else {
                          resultBox.innerHTML = '';
                     }
@@ -502,7 +530,7 @@
 
         let amount;
         try {
-            amount = safeEval(display.value);
+            amount = safeEval(currentInput);
             if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
                 throw new Error("Risultato non valido.");
             }
@@ -532,7 +560,7 @@
             resultBox.style.color = '#90ee90';
             
             // Reset UI
-            display.value = '';
+            display.innerHTML = '';
             currentInput = '';
             document.getElementById('note').value = '';
             document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
