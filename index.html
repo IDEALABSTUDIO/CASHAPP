@@ -44,20 +44,20 @@
         }
         .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
         
-        /* New Display Box Style */
-        .display-box {
-            grid-column: span 4; font-size: 2.5rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
+        #display {
+            grid-column: span 4; font-size: 3.5rem; text-align: right; padding: 0.4rem 0.8rem; background: #000;
             color: #fff; width: 100%; height: 7rem; border-radius: 8px;
-            overflow-x: auto; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end;
+            border: none;
         }
-        .display-box .operator-char { color: #4285F4; }
-        .display-inline-result { color: #888; margin-left: 0.5em; }
-
+        
         .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
         .operator { background: #444; }
-        #clear { background: #EA4335; }
-        #clear:hover { background: #d93325; }
+        #clear { background: #e74c3c; }
+        #clear:hover { background: #c0392b; }
+        #equals { background: #4285F4; }
+        #equals:hover { background: #357ae8; }
+
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
         .right button:hover { transform: translateY(-2px); }
 
@@ -191,7 +191,7 @@
             .right { flex-basis: 150px; min-width: 110px; }
             .category, .right button { padding: 0.6rem; font-size: 0.9rem; }
             .right button { font-size: 1rem; min-height: 50px; }
-            .display-box { font-size: 2rem; height: 6rem; }
+            #display { font-size: 2rem; height: 6rem; }
             .key { height: 60px; }
         }
         
@@ -235,7 +235,7 @@
                 flex-basis: auto;
             }
             .keypad { grid-template-columns: repeat(4, 1fr); }
-            .display-box { font-size: 2rem; height: 4.5rem; }
+            #display { font-size: 2rem; height: 4.5rem; }
             .key { height: 50px; font-size: 1.2rem; }
             #note { min-height: 40px; }
         }
@@ -282,11 +282,12 @@
         </div>
         <div class="bottom-input-area">
             <div class="keypad">
-                <div id="display" class="display-box"></div>
-                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value="/">÷</div>
-                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value="*">×</div>
-                <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value="-">-</div>
-                <div class="key" id="clear">C</div><div class="key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" data-value="+">+</div>
+                <input type="text" id="display" readonly/>
+                <div class="key operator" id="clear">C</div><div class="key operator" data-value="(">(</div><div class="key operator" data-value=")">)</div><div class="key operator" data-value="/">÷</div>
+                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value="*">×</div>
+                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value="-">-</div>
+                <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value="+">+</div>
+                <div class="key" data-value="0" style="grid-column: span 2;">0</div><div class="key" data-value=".">.</div><div class="key operator" id="equals">=</div>
             </div>
             <div id="log">Effettua il login per iniziare</div>
             <textarea id="note" placeholder="Note..."></textarea>
@@ -404,7 +405,7 @@
     });
 
     function safeEval(expression) {
-        if (!expression || !/^[0-9+\-*/. ]+$/.test(expression.trim())) {
+        if (!expression || !/^[0-9()+\-*/. ]+$/.test(expression.trim())) {
             return null;
         }
         try {
@@ -435,39 +436,22 @@
 
         const display = document.getElementById('display');
         
-        function updateDisplay() {
-            display.innerHTML = '';
-            
-            // Build the color-coded input string
-            const expressionHTML = currentInput.replace(/ ([\+\-\*\/]) /g, '<span class="operator-char"> $1 </span>');
-            
-            // Calculate the live result
-            const result = safeEval(currentInput);
-            let resultHTML = '';
-            
-            if (result !== null && typeof result === 'number' && isFinite(result) && currentInput.trim() !== String(result)) {
-                const formattedResult = result.toLocaleString('it-IT', { maximumFractionDigits: 2 });
-                resultHTML = `<span class="display-inline-result">( = ${formattedResult} )</span>`;
-            }
-
-            display.innerHTML = expressionHTML + resultHTML;
-            display.scrollLeft = display.scrollWidth; // Auto-scroll to the end
-        }
-
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
 
                 if (key.id === 'clear') {
                     currentInput = '';
-                } else if (key.classList.contains('operator')) {
-                    // Add spaces around operators for parsing
-                    currentInput += ` ${value.trim()} `;
+                } else if (key.id === 'equals') {
+                    const result = safeEval(currentInput);
+                    if (result !== null) {
+                        currentInput = String(result);
+                    }
                 } else {
                     currentInput += value;
                 }
                 
-                updateDisplay();
+                display.value = currentInput.replace(/\*/g, '×').replace(/\//g, '÷');
             });
         });
     }
@@ -550,7 +534,7 @@
             resultMessageBox.style.color = '#34A853';
             
             // Reset UI
-            document.getElementById('display').innerHTML = '';
+            document.getElementById('display').value = '';
             currentInput = '';
             document.getElementById('note').value = '';
             document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
