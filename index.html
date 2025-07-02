@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Payment Tracker - Google Sheets</title>
+    <title>Cash Tracker - Google Sheets</title>
     <style>
         /* Base Styles */
         * { box-sizing: border-box; }
@@ -37,7 +37,7 @@
         .category { height: auto; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0.7rem; background: #333; border: none; cursor: pointer; border-radius: 6px; text-align: center; font-size: 1rem; color: white; transition: all 0.2s ease; }
         .category:hover { background: #444; transform: translateY(-1px); }
         .category.active { background: #555; border: 2px solid #34A853; }
-        .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; }
+        .top-messages-area { margin-bottom: 0.8rem; flex-shrink: 0; min-height: 24px; }
         .bottom-input-area {
             margin-top: auto; width: 100%; display: flex;
             flex-direction: column; gap: 0.8rem; flex-shrink: 0;
@@ -65,7 +65,11 @@
         .history-button { height: 38px; padding: 0.2rem; font-size: 1.4rem; border-radius: 8px; line-height: 1; margin-top: 0; flex-shrink: 0; }
         
         #note { width: 100%; padding: 0.5rem; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; resize: vertical; }
-        #result { margin-top: 0.5rem; padding: 0.5rem; background: #333; border-radius: 4px; color: #90ee90; text-align: center; }
+        #result { 
+            margin-top: 0.5rem; padding: 0.5rem; background: #181818; 
+            border-radius: 4px; color: #90ee90; text-align: right; 
+            font-size: 1.2rem; font-weight: bold; height: 30px;
+        }
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
@@ -268,8 +272,8 @@
         <div class="bottom-input-area">
             <div class="keypad">
                 <input type="text" id="display" disabled />
-                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value=" / ">/</div>
-                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value=" * ">*</div>
+                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value=" / ">&divide;</div>
+                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value=" * ">&times;</div>
                 <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value=" - ">-</div>
                 <div class="key" id="clear">C</div><div class="key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" data-value=" + ">+</div>
             </div>
@@ -388,6 +392,17 @@
         }
     });
 
+    function safeEval(expression) {
+        if (!/^[0-9+\-*/. ]+$/.test(expression)) {
+            return null;
+        }
+        try {
+            return new Function('return ' + expression)();
+        } catch (e) {
+            return null;
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         setupUI();
     });
@@ -408,28 +423,34 @@
         });
 
         const display = document.getElementById('display');
+        const resultBox = document.getElementById('result');
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
                 if (value) {
-                    if (value === '.' && currentInput.includes('.')) return;
                     currentInput += value;
                     display.value = currentInput;
                 } else if (key.id === 'clear') {
                     currentInput = '';
                     display.value = '';
                 }
+                
+                // Live calculation preview
+                if (currentInput.trim() === '' || / [+\-*/] $/.test(currentInput.trim())) {
+                    resultBox.innerHTML = '';
+                } else {
+                    const result = safeEval(currentInput);
+                    if (result !== null && typeof result === 'number' && isFinite(result)) {
+                        resultBox.innerHTML = `= ${result.toLocaleString('it-IT', { maximumFractionDigits: 2 })}`;
+                    } else {
+                         resultBox.innerHTML = '';
+                    }
+                }
+                if (key.id === 'clear') {
+                    resultBox.innerHTML = '';
+                }
             });
         });
-    }
-
-    function safeEval(expression) {
-        // Sanitize the expression to only allow numbers and basic operators
-        if (!/^[0-9+\-*/. ]+$/.test(expression)) {
-            throw new Error("Invalid characters in expression.");
-        }
-        // Use the Function constructor for safer evaluation
-        return new Function('return ' + expression)();
     }
 
     window.loadSheetData = async function() {
@@ -481,9 +502,8 @@
 
         let amount;
         try {
-            // Evaluate the expression from the display
             amount = safeEval(display.value);
-            if (typeof amount !== 'number' || !isFinite(amount)) {
+            if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
                 throw new Error("Risultato non valido.");
             }
         } catch (e) {
@@ -516,6 +536,7 @@
             currentInput = '';
             document.getElementById('note').value = '';
             document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            setTimeout(() => { resultBox.innerHTML = ''; }, 3000);
 
         } catch (error) {
             logBox.textContent = `Errore nella registrazione: ${error.message}`;
