@@ -52,10 +52,11 @@
         
         .key { height: 60px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.2rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
-        .operator { background: #444; }
-        #clear { background: #EA4335; }
+        .operator { background: #FBBC05; color: #202124; font-weight: bold; }
+        .operator:hover { background: #f2b000; }
+        #clear { background: #EA4335; color: white; }
         #clear:hover { background: #d93325; }
-        #equals { background: #4285F4; grid-row: span 2; height: auto;}
+        #equals { background: #4285F4; color: white; grid-row: span 2; height: auto;}
         #equals:hover { background: #357ae8; }
 
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
@@ -184,12 +185,21 @@
         @media (max-width: 1200px) {
             .left { flex-basis: 200px; min-width: 150px; }
             .right { flex-basis: 150px; min-width: 110px; }
-            .category, .right button { padding: 0.6rem; font-size: 0.9rem; }
+            .category, .right button { padding: 0.8rem; font-size: 0.9rem; }
             .right button { font-size: 1rem; min-height: 50px; }
-            #display { font-size: 2rem; height: 6rem; }
-            .key { height: 60px; }
+            #display { font-size: 2.8rem; height: 6rem; }
+            .key { height: 65px; font-size: 1.3rem; }
         }
         
+        @media (max-height: 800px) and (min-width: 769px) {
+            .left, .right { padding-top: 60px; }
+            .key { height: 55px; font-size: 1.1rem; }
+            #display { height: 5rem; font-size: 2.5rem; }
+            .bottom-input-area { gap: 0.5rem; }
+            .right button { min-height: 50px; padding: 0.6rem; }
+            .category { padding: 0.6rem; }
+        }
+
         @media (max-width: 768px) {
             html, body {
                 height: auto;
@@ -205,17 +215,9 @@
                 max-width: 100%;
                 padding: 0.5rem 1rem;
             }
-            .left {
-                order: 2;
-                border-top: 1px solid #444;
-            }
-            .right {
-                order: 3;
-            }
-            .center {
-                order: 1;
-                min-height: 0;
-            }
+            .left { order: 2; border-top: 1px solid #444; }
+            .right { order: 3; }
+            .center { order: 1; min-height: 0; }
             .categories, .right {
                 flex-direction: row;
                 flex-wrap: wrap;
@@ -228,9 +230,8 @@
                 flex-grow: 1;
                 flex-basis: auto;
             }
-            .keypad { grid-template-columns: repeat(4, 1fr); }
-            #display { font-size: 2rem; height: 4.5rem; }
-            .key { height: 50px; font-size: 1.2rem; }
+            #display { font-size: 2.5rem; height: 5rem; }
+            .key { height: 60px; font-size: 1.2rem; }
             #note { min-height: 40px; }
         }
     </style>
@@ -399,13 +400,12 @@
     });
 
     function safeEval(expression) {
-        if (!expression || !/^[0-9()+\-*/. ]+$/.test(expression.trim())) {
-            return null;
-        }
+        if (!expression) return null;
         try {
-            return new Function('return ' + expression)();
+            const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+            return new Function('return ' + evalExpression)();
         } catch (e) {
-            return null;
+            return 'Error';
         }
     }
 
@@ -437,15 +437,16 @@
                 if (key.id === 'clear') {
                     currentInput = '';
                 } else if (key.id === 'equals') {
-                    try {
-                        const result = safeEval(currentInput);
-                        if (result !== null) {
-                            currentInput = String(result);
-                        }
-                    } catch (e) {
-                        currentInput = 'Error';
+                    const result = safeEval(currentInput);
+                    if (result !== null) {
+                        currentInput = String(result);
                     }
                 } else {
+                    // Prevent multiple operators in a row
+                    const lastChar = currentInput.trim().slice(-1);
+                    if (['+','-','*','/'].includes(lastChar) && ['+','-','*','/'].includes(value)) {
+                        return;
+                    }
                     currentInput += value;
                 }
                 
@@ -502,7 +503,6 @@
 
         let amount;
         try {
-            // Since the user might not press equals, evaluate the current input
             amount = safeEval(currentInput);
             if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
                 throw new Error("Risultato non valido.");
@@ -532,7 +532,6 @@
             resultMessageBox.innerText = `Registrato: €${finalAmount.toFixed(2)} - ${type} - ${category}`;
             resultMessageBox.style.color = '#34A853';
             
-            // Reset UI
             document.getElementById('display').value = '';
             currentInput = '';
             document.getElementById('note').value = '';
