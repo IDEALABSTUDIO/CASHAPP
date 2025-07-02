@@ -42,10 +42,11 @@
             margin-top: auto; width: 100%; display: flex;
             flex-direction: column; gap: 0.8rem; flex-shrink: 0;
         }
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; width: 100%; }
-        .keypad input { grid-column: span 3; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 8px; }
+        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; width: 100%; }
+        .keypad input { grid-column: span 4; font-size: 3.5rem; text-align: right; padding: 0.4rem; background: #000; border: none; color: #fff; width: 100%; height: 7rem; border-radius: 8px; }
         .key { height: 70px; background: #2a2a2a; border: none; cursor: pointer; font-size: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s ease; }
         .key:hover { background: #3a3a3a; }
+        .operator { background: #444; }
         #clear { background: #EA4335; }
         #clear:hover { background: #d93325; }
         .right button { height: auto; padding: 1rem; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 55px; transition: all 0.2s ease; }
@@ -218,6 +219,7 @@
                 flex-grow: 1;
                 flex-basis: auto;
             }
+            .keypad { grid-template-columns: repeat(4, 1fr); }
             .keypad input { font-size: 2.5rem; height: 4.5rem; }
             .key { height: 50px; font-size: 1.2rem; }
             #note { min-height: 40px; }
@@ -266,10 +268,10 @@
         <div class="bottom-input-area">
             <div class="keypad">
                 <input type="text" id="display" disabled />
-                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div>
-                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div>
-                <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div>
-                <div class="key" id="clear">C</div><div class="key" data-value="0">0</div><div class="key" data-value=".">.</div>
+                <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value=" / ">/</div>
+                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value=" * ">*</div>
+                <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value=" - ">-</div>
+                <div class="key" id="clear">C</div><div class="key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" data-value=" + ">+</div>
             </div>
             <div id="log">Effettua il login per iniziare</div>
             <textarea id="note" placeholder="Note..."></textarea>
@@ -421,6 +423,15 @@
         });
     }
 
+    function safeEval(expression) {
+        // Sanitize the expression to only allow numbers and basic operators
+        if (!/^[0-9+\-*/. ]+$/.test(expression)) {
+            throw new Error("Invalid characters in expression.");
+        }
+        // Use the Function constructor for safer evaluation
+        return new Function('return ' + expression)();
+    }
+
     window.loadSheetData = async function() {
         if (!oauthAccessToken) {
             alert("Per favore, effettua nuovamente il login per leggere i dati.");
@@ -464,18 +475,31 @@
     window.register = async function(type) {
         if (!oauthAccessToken) { alert("Per favore, effettua nuovamente il login per salvare i dati."); return; }
         const display = document.getElementById('display');
-        const amount = parseFloat(display.value);
         const note = document.getElementById('note').value.trim();
         const resultBox = document.getElementById('result');
         const categoryBtn = document.querySelector('.category.active');
+
+        let amount;
+        try {
+            // Evaluate the expression from the display
+            amount = safeEval(display.value);
+            if (typeof amount !== 'number' || !isFinite(amount)) {
+                throw new Error("Risultato non valido.");
+            }
+        } catch (e) {
+            resultBox.innerText = 'Errore: Espressione non valida.';
+            resultBox.style.color = '#EA4335';
+            return;
+        }
+
         if (!categoryBtn) { resultBox.innerText = 'Errore: Seleziona una categoria.'; resultBox.style.color = '#EA4335'; return; }
         const category = categoryBtn.textContent;
         if (category === 'CUSTOM' && note === '') { resultBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultBox.style.color = '#EA4335'; return; }
-        if (isNaN(amount) || display.value === '') { resultBox.innerText = 'Errore: Inserire un importo valido.'; resultBox.style.color = '#EA4335'; return; }
+        
         const now = new Date();
         const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
         const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
-        const newRow = [dateString, finalAmount, category, type, note];
+        const newRow = [dateString, finalAmount.toFixed(2), category, type, note];
         const appendRange = 'Foglio1';
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
         const body = { values: [newRow] };
