@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Payment Tracker - Google Sheets</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Base Styles */
         * { box-sizing: border-box; }
@@ -83,13 +84,45 @@
         #log { margin-top: 1rem; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 0.9rem; color: #ccc; font-style: italic; text-align: center; background: #333; border-radius: 4px; }
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
-        #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 80%; height: 80%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        #storico-modal button { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
-        #storico-modal button:hover { background: #d93325; }
+        #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1200px; height: 90%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+        #storico-modal button.close-btn { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
+        #storico-modal button.close-btn:hover { background: #d93325; }
         #storico-popup-content { margin-top: 3rem; }
+        #storico-popup-content h4 { border-bottom: 2px solid #4285F4; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.2rem; }
         #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         #storico-popup-content th, #storico-popup-content td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #444; font-size: 0.9rem; }
         #storico-popup-content th { background: #333; font-weight: bold; }
+
+        #analytics-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #555;
+        }
+        #analytics-section h3 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #FBBC05;
+            margin-bottom: 1.5rem;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem;
+        }
+        .chart-card {
+            background: #2a2a2a;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .chart-card h4 {
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+
 
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -296,8 +329,29 @@
 </div>
 <div id="popup-overlay"></div>
 <div id="storico-modal">
-    <button onclick="chiudiPopup()">Chiudi</button>
+    <button class="close-btn" onclick="chiudiPopup()">Chiudi</button>
     <div id="storico-popup-content"></div>
+    <div id="analytics-section" style="display: none;">
+        <h3>Analytics Dashboard</h3>
+        <div class="charts-container">
+            <div class="chart-card">
+                <h4>Aggregato Giornaliero</h4>
+                <canvas id="daily-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Aggregato Settimanale</h4>
+                <canvas id="weekly-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Aggregato Mensile</h4>
+                <canvas id="monthly-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Aggregato Annuale</h4>
+                <canvas id="yearly-chart"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
@@ -332,6 +386,9 @@
 
     let oauthAccessToken = null;
     let currentInput = '';
+    let currentUser = null;
+    let activeCharts = [];
+
 
     async function reauthenticateAndGetToken() {
         try {
@@ -409,6 +466,7 @@
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
+            currentUser = user;
             loginScreen.style.display = 'none';
             mainAppContainer.style.display = 'flex';
             userInfoDiv.style.display = 'flex';
@@ -418,6 +476,7 @@
                 logBox.textContent = `Bentornato, ${user.displayName}!`;
             }
         } else {
+            currentUser = null;
             oauthAccessToken = null;
             loginScreen.style.display = 'flex';
             mainAppContainer.style.display = 'none';
@@ -485,10 +544,17 @@
 
     window.loadSheetData = async function() {
         const storicoBox = document.getElementById('storico-popup-content');
+        const analyticsSection = document.getElementById('analytics-section');
+
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'block';
         storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
+        analyticsSection.style.display = 'none';
         logBox.textContent = 'Caricamento dati dal foglio Google...';
+
+        activeCharts.forEach(chart => chart.destroy());
+        activeCharts = [];
+
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
         try {
             const response = await authenticatedFetch(apiUrl);
@@ -498,21 +564,22 @@
             }
             const data = await response.json();
             const rows = data.values;
-            if (!rows || rows.length === 0) {
+            if (!rows || rows.length < 2) {
                 storicoBox.innerHTML = '<p>Nessun dato trovato nel foglio.</p>';
                 logBox.textContent = 'Nessun dato trovato.';
                 return;
             }
             const headers = rows[0];
-            const dataRows = rows.slice(1);
-            dataRows.reverse();
+            const dataRows = rows.slice(1).reverse(); // Newest first
 
-            let html = `<table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
-            dataRows.forEach(row => {
+            // Display last 10 transactions
+            const recentTransactions = dataRows.slice(0, 10);
+            let html = `<h4>Ultime 10 Transazioni</h4><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+            recentTransactions.forEach(row => {
                 let rowHTML = '';
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
-                    if (i === 1) {
+                    if (i === 1) { // Amount column
                         const amount = parseFloat(cellContent);
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
@@ -524,6 +591,14 @@
             });
             html += '</tbody></table>';
             storicoBox.innerHTML = html;
+
+            // Analytics Section
+            const authorizedUsers = ['Holsi Hasanaj'];
+            if (currentUser && authorizedUsers.includes(currentUser.displayName)) {
+                analyticsSection.style.display = 'block';
+                renderAnalyticsCharts(dataRows);
+            }
+
             logBox.textContent = 'Dati caricati con successo.';
         } catch (error) {
             storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
@@ -531,6 +606,101 @@
             console.error("Errore fetch Google Sheets:", error);
         }
     }
+
+    function renderAnalyticsCharts(dataRows) {
+        const parseDate = (dateString) => {
+            const parts = dateString.split('/');
+            return new Date(parts[2], parts[1] - 1, parts[0]);
+        };
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+        const daily = {};
+        const weekly = {};
+        const monthly = {};
+        const yearly = {};
+
+        dataRows.forEach(row => {
+            try {
+                const date = parseDate(row[0]);
+                const amount = parseFloat(row[1]);
+                const category = row[2] || 'N/A';
+
+                if (isNaN(amount) || amount <= 0) return;
+
+                if (date >= today) {
+                    daily[category] = (daily[category] || 0) + amount;
+                }
+                if (date >= startOfWeek) {
+                    weekly[category] = (weekly[category] || 0) + amount;
+                }
+                if (date >= startOfMonth) {
+                    monthly[category] = (monthly[category] || 0) + amount;
+                }
+                if (date >= startOfYear) {
+                    yearly[category] = (yearly[category] || 0) + amount;
+                }
+            } catch (e) {
+                // Ignore rows with invalid data
+            }
+        });
+
+        createPieChart('daily-chart', 'Entrate di Oggi', daily);
+        createPieChart('weekly-chart', 'Entrate Settimanali', weekly);
+        createPieChart('monthly-chart', 'Entrate Mensili', monthly);
+        createPieChart('yearly-chart', 'Entrate Annuali', yearly);
+    }
+
+    function createPieChart(canvasId, title, data) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+
+        const chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63'],
+                    borderColor: '#1e1e1e',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#fff'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        activeCharts.push(chart);
+    }
+
 
     window.register = async function(type) {
         const resultMessageBox = document.getElementById('result-message');
@@ -585,6 +755,8 @@
     window.chiudiPopup = function() {
         document.getElementById('popup-overlay').style.display = 'none';
         document.getElementById('storico-modal').style.display = 'none';
+        activeCharts.forEach(chart => chart.destroy());
+        activeCharts = [];
     }
 </script>
 </body>
