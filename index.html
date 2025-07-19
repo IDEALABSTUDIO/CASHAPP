@@ -620,13 +620,13 @@
     window.loadSheetData = async function() {
         const tableContent = document.getElementById('table-content');
         const analyticsSection = document.getElementById('analytics-section');
-        const analyticsBtnContainer = document.querySelector('.analytics-btn-container');
+        const analyticsBtn = document.getElementById('show-analytics-btn');
 
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'block';
         tableContent.style.display = 'block';
         analyticsSection.style.display = 'none';
-        analyticsBtnContainer.style.display = 'none';
+        analyticsBtn.style.display = 'none';
 
         const storicoBox = document.getElementById('storico-popup-content');
         storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
@@ -676,7 +676,7 @@
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
             const authorizedInitials = ['H H'];
             if (currentUser && authorizedInitials.includes(userInitials)) {
-                analyticsBtnContainer.style.display = 'flex';
+                analyticsBtn.style.display = 'block';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
             }
 
@@ -865,10 +865,7 @@
         logBox.textContent = "Registrazione in corso...";
         try {
             const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Errore API Google: ${errorData.error.message}`);
-            }
+            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
             logBox.textContent = `Movimento registrato con successo!`;
             resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
             resultMessageBox.style.color = '#34A853';
