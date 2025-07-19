@@ -674,7 +674,12 @@
             const date = parseDate(row[0]);
             if (!date) return;
 
-            const amount = parseFloat(String(row[1]).replace(',', '.'));
+            const amountStr = String(row[1] || '');
+            if (amountStr.includes('.')) {
+                return;
+            }
+
+            const amount = parseFloat(amountStr.replace(',', '.'));
             if (isNaN(amount)) return;
 
             const category = row[2] || 'N/A';
