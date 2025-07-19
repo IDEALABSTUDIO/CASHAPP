@@ -319,7 +319,7 @@
                 <input type="text" id="display" readonly/>
                 <div class="key operator" id="clear">C</div><div class="key operator" data-value="(">(</div><div class="key operator" data-value=")">)</div><div class="key operator" data-value="/">÷</div>
                 <div class="key" data-value="7">7</div><div class="key" data-value="8">8</div><div class="key" data-value="9">9</div><div class="key operator" data-value="*">×</div>
-                <div class="key" data-value="4">4</div><div class="key" data-value="5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value="-">-</div>
+                <div class="key" data-value="4">4</div><div class="key" data-value="5">5">5</div><div class="key" data-value="6">6</div><div class="key operator" data-value="-">-</div>
                 <div class="key" data-value="1">1</div><div class="key" data-value="2">2</div><div class="key" data-value="3">3</div><div class="key operator" data-value="+">+</div>
                 <div class="key" id="zero-key" data-value="0">0</div><div class="key" data-value=".">.</div><div class="key operator" id="equals">=</div>
             </div>
@@ -575,6 +575,12 @@
         });
     }
 
+    function normalizeAmount(s) {
+        if (typeof s !== 'string') return NaN;
+        const cleanedString = s.replace(/€/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleanedString);
+    }
+
     window.loadSheetData = async function() {
         const storicoBox = document.getElementById('storico-popup-content');
         const analyticsSection = document.getElementById('analytics-section');
@@ -613,7 +619,7 @@
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
                     if (i === 1) { // Amount column
-                        const amount = parseFloat(String(cellContent).replace(',', '.'));
+                        const amount = normalizeAmount(cellContent);
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
                         }
@@ -674,12 +680,7 @@
             const date = parseDate(row[0]);
             if (!date) return;
 
-            const amountStr = String(row[1] || '');
-            if (amountStr.includes('.')) {
-                return;
-            }
-
-            const amount = parseFloat(amountStr.replace(',', '.'));
+            const amount = normalizeAmount(row[1]);
             if (isNaN(amount)) return;
 
             const category = row[2] || 'N/A';
