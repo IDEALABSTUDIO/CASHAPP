@@ -352,20 +352,34 @@
         <h3>Analytics Dashboard</h3>
         <div class="charts-container">
             <div class="chart-card">
-                <h4>Aggregato Giornaliero</h4>
-                <canvas id="daily-chart"></canvas>
+                <h4>Entrate/Uscite (Oggi)</h4>
+                <canvas id="daily-type-chart"></canvas>
             </div>
             <div class="chart-card">
-                <h4>Aggregato Settimanale</h4>
-                <canvas id="weekly-chart"></canvas>
+                <h4>Categorie Entrate (Oggi)</h4>
+                <canvas id="daily-category-chart"></canvas>
             </div>
             <div class="chart-card">
-                <h4>Aggregato Mensile</h4>
-                <canvas id="monthly-chart"></canvas>
+                <h4>Entrate/Uscite (Mese Corrente)</h4>
+                <canvas id="monthly-type-chart"></canvas>
             </div>
             <div class="chart-card">
-                <h4>Aggregato Annuale</h4>
-                <canvas id="yearly-chart"></canvas>
+                <h4>Categorie Entrate (Mese Corrente)</h4>
+                <canvas id="monthly-category-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Entrate/Uscite (Anno Corrente)</h4>
+                <canvas id="yearly-type-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Categorie Entrate (Anno Corrente)</h4>
+                <canvas id="yearly-category-chart"></canvas>
+            </div>
+        </div>
+        <div class="charts-container" style="margin-top: 2rem;">
+            <div class="chart-card" style="grid-column: 1 / -1;">
+                <h4>Riepilogo Annuale Entrate/Uscite</h4>
+                <canvas id="yearly-summary-chart"></canvas>
             </div>
         </div>
     </div>
@@ -626,82 +640,72 @@
 
     function parseDate(dateString) {
         if (!dateString || typeof dateString !== 'string') return null;
-
-        // Handles DD/MM/YYYY and DD/MM/YY
         let parts = dateString.split('/');
         if (parts.length === 3) {
             const day = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10) - 1;
             let year = parseInt(parts[2], 10);
-            
             if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-
-            if (year < 100) {
-                year += 2000; // Assumes 21st century for 2-digit years
-            }
-            
+            if (year < 100) year += 2000;
             const date = new Date(year, month, day);
-            // Basic validation to check if the constructed date is valid
             if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
                 return date;
             }
         }
-
-        // Fallback for other formats like YYYY-MM-DD
         const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-            return date;
-        }
-
-        return null;
+        return !isNaN(date.getTime()) ? date : null;
     }
 
     function renderAnalyticsCharts(dataRows) {
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Monday as start of week
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const todayStr = now.toDateString();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
 
-        const daily = {};
-        const weekly = {};
-        const monthly = {};
-        const yearly = {};
+        const daily = { byType: {}, byCategory: {} };
+        const monthly = { byType: {}, byCategory: {} };
+        const yearly = { byType: {}, byCategory: {} };
+        const yearlySummary = {};
 
         dataRows.forEach(row => {
             const date = parseDate(row[0]);
-            if (!date) {
-                console.warn('Formato data non valido, riga saltata:', row);
-                return;
-            }
-            
+            if (!date) return;
+
             const amount = parseFloat(String(row[1]).replace(',', '.'));
+            if (isNaN(amount)) return;
+
             const category = row[2] || 'N/A';
+            const type = row[3] || 'N/A';
+            const year = date.getFullYear();
 
-            if (isNaN(amount) || amount <= 0) return; // Consider only income
+            if (!yearlySummary[year]) yearlySummary[year] = { income: 0, expense: 0 };
+            if (amount > 0) yearlySummary[year].income += amount;
+            else yearlySummary[year].expense += Math.abs(amount);
 
-            if (date.getTime() >= today.getTime()) {
-                daily[category] = (daily[category] || 0) + amount;
+            if (date.toDateString() === todayStr) {
+                daily.byType[type] = (daily.byType[type] || 0) + amount;
+                if (amount > 0) daily.byCategory[category] = (daily.byCategory[category] || 0) + amount;
             }
-            if (date.getTime() >= startOfWeek.getTime()) {
-                weekly[category] = (weekly[category] || 0) + amount;
+            if (year === currentYear && date.getMonth() === currentMonth) {
+                monthly.byType[type] = (monthly.byType[type] || 0) + amount;
+                if (amount > 0) monthly.byCategory[category] = (monthly.byCategory[category] || 0) + amount;
             }
-            if (date.getTime() >= startOfMonth.getTime()) {
-                monthly[category] = (monthly[category] || 0) + amount;
-            }
-            if (date.getTime() >= startOfYear.getTime()) {
-                yearly[category] = (yearly[category] || 0) + amount;
+            if (year === currentYear) {
+                yearly.byType[type] = (yearly.byType[type] || 0) + amount;
+                if (amount > 0) yearly.byCategory[category] = (yearly.byCategory[category] || 0) + amount;
             }
         });
 
-        createPieChart('daily-chart', 'Entrate di Oggi', daily);
-        createPieChart('weekly-chart', 'Entrate Settimanali', weekly);
-        createPieChart('monthly-chart', 'Entrate Mensili', monthly);
-        createPieChart('yearly-chart', 'Entrate Annuali', yearly);
+        createDoughnutChart('daily-type-chart', daily.byType);
+        createDoughnutChart('daily-category-chart', daily.byCategory);
+        createDoughnutChart('monthly-type-chart', monthly.byType);
+        createDoughnutChart('monthly-category-chart', monthly.byCategory);
+        createDoughnutChart('yearly-type-chart', yearly.byType);
+        createDoughnutChart('yearly-category-chart', yearly.byCategory);
+        createYearlySummaryChart('yearly-summary-chart', yearlySummary);
     }
 
-    function createPieChart(canvasId, title, data) {
+    function createDoughnutChart(canvasId, data) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(data);
         const values = Object.values(data);
@@ -712,9 +716,7 @@
                 labels: labels.length > 0 ? labels : ['Nessun dato'],
                 datasets: [{
                     data: values.length > 0 ? values : [1],
-                    backgroundColor: labels.length > 0 
-                        ? ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63']
-                        : ['#333'],
+                    backgroundColor: labels.length > 0 ? ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63'] : ['#333'],
                     borderColor: '#1e1e1e',
                     borderWidth: 2
                 }]
@@ -722,23 +724,14 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: '#fff'
-                        }
-                    },
+                    legend: { position: 'top', labels: { color: '#fff' } },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
                                 if (context.label === 'Nessun dato') return 'Nessun dato';
                                 let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed);
-                                }
+                                if (label) label += ': ';
+                                if (context.parsed !== null) label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed);
                                 return label;
                             }
                         }
@@ -749,6 +742,44 @@
         activeCharts.push(chart);
     }
 
+    function createYearlySummaryChart(canvasId, data) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const sortedYears = Object.keys(data).sort();
+        const incomeData = sortedYears.map(year => data[year].income);
+        const expenseData = sortedYears.map(year => data[year].expense);
+
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sortedYears,
+                datasets: [
+                    { label: 'Entrate', data: incomeData, backgroundColor: 'rgba(52, 168, 83, 0.8)' },
+                    { label: 'Uscite', data: expenseData, backgroundColor: 'rgba(234, 67, 53, 0.8)' }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#fff' } },
+                    x: { ticks: { color: '#fff' } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#fff' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        activeCharts.push(chart);
+    }
 
     window.register = async function(type) {
         const resultMessageBox = document.getElementById('result-message');
