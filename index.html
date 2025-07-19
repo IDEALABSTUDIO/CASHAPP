@@ -352,28 +352,30 @@
         <h3>Analytics Dashboard</h3>
         <div class="charts-container">
             <div class="chart-card">
-                <h4>Entrate/Uscite (Oggi)</h4>
-                <canvas id="daily-type-chart"></canvas>
-            </div>
-            <div class="chart-card">
                 <h4>Categorie Entrate (Oggi)</h4>
                 <canvas id="daily-category-chart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h4>Entrate/Uscite (Mese Corrente)</h4>
-                <canvas id="monthly-type-chart"></canvas>
             </div>
             <div class="chart-card">
                 <h4>Categorie Entrate (Mese Corrente)</h4>
                 <canvas id="monthly-category-chart"></canvas>
             </div>
             <div class="chart-card">
-                <h4>Entrate/Uscite (Anno Corrente)</h4>
-                <canvas id="yearly-type-chart"></canvas>
-            </div>
-            <div class="chart-card">
                 <h4>Categorie Entrate (Anno Corrente)</h4>
                 <canvas id="yearly-category-chart"></canvas>
+            }
+        </div>
+        <div class="charts-container">
+            <div class="chart-card">
+                <h4>Entrate/Uscite (Oggi)</h4>
+                <canvas id="daily-type-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Entrate/Uscite (Mese Corrente)</h4>
+                <canvas id="monthly-type-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Entrate/Uscite (Anno Corrente)</h4>
+                <canvas id="yearly-type-chart"></canvas>
             </div>
         </div>
         <div class="charts-container" style="margin-top: 2rem;">
@@ -611,7 +613,7 @@
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
                     if (i === 1) { // Amount column
-                        const amount = parseFloat(String(cellContent).replace(',', '.'));
+                        const amount = parseFloat(String(cellContent).replace(/\./g, '').replace(',', '.'));
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
                         }
@@ -624,8 +626,9 @@
             storicoBox.innerHTML = html;
 
             // Analytics Section
-            const authorizedUsers = ['Holsi Hasanaj'];
-            if (currentUser && authorizedUsers.includes(currentUser.displayName)) {
+            const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
+            const authorizedInitials = 'H H';
+            if (currentUser && userInitials === authorizedInitials) {
                 analyticsSection.style.display = 'block';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
             }
@@ -667,11 +670,16 @@
         const yearly = { byType: {}, byCategory: {} };
         const yearlySummary = {};
 
+        const normalizeAmount = (s) => {
+            if (typeof s !== 'string') return NaN;
+            return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+        }
+
         dataRows.forEach(row => {
             const date = parseDate(row[0]);
             if (!date) return;
 
-            const amount = parseFloat(String(row[1]).replace(',', '.'));
+            const amount = normalizeAmount(row[1]);
             if (isNaN(amount)) return;
 
             const category = row[2] || 'N/A';
@@ -679,8 +687,11 @@
             const year = date.getFullYear();
 
             if (!yearlySummary[year]) yearlySummary[year] = { income: 0, expense: 0 };
-            if (amount > 0) yearlySummary[year].income += amount;
-            else yearlySummary[year].expense += Math.abs(amount);
+            if (amount > 0) {
+                yearlySummary[year].income += amount;
+            } else {
+                yearlySummary[year].expense += Math.abs(amount);
+            }
 
             if (date.toDateString() === todayStr) {
                 daily.byType[type] = (daily.byType[type] || 0) + amount;
@@ -696,12 +707,12 @@
             }
         });
 
-        createDoughnutChart('daily-type-chart', daily.byType);
         createDoughnutChart('daily-category-chart', daily.byCategory);
-        createDoughnutChart('monthly-type-chart', monthly.byType);
         createDoughnutChart('monthly-category-chart', monthly.byCategory);
-        createDoughnutChart('yearly-type-chart', yearly.byType);
         createDoughnutChart('yearly-category-chart', yearly.byCategory);
+        createDoughnutChart('daily-type-chart', daily.byType);
+        createDoughnutChart('monthly-type-chart', monthly.byType);
+        createDoughnutChart('yearly-type-chart', yearly.byType);
         createYearlySummaryChart('yearly-summary-chart', yearlySummary);
     }
 
