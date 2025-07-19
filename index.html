@@ -865,7 +865,10 @@
         logBox.textContent = "Registrazione in corso...";
         try {
             const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Errore API Google: ${errorData.error.message}`);
+            }
             logBox.textContent = `Movimento registrato con successo!`;
             resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
             resultMessageBox.style.color = '#34A853';
