@@ -362,7 +362,7 @@
             <div class="chart-card">
                 <h4>Categorie Entrate (Anno Corrente)</h4>
                 <canvas id="yearly-category-chart"></canvas>
-            }
+            </div>
         </div>
         <div class="charts-container">
             <div class="chart-card">
@@ -613,7 +613,7 @@
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
                     if (i === 1) { // Amount column
-                        const amount = parseFloat(String(cellContent).replace(/\./g, '').replace(',', '.'));
+                        const amount = parseFloat(String(cellContent).replace(',', '.'));
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
                         }
@@ -627,8 +627,8 @@
 
             // Analytics Section
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
-            const authorizedInitials = 'H H';
-            if (currentUser && userInitials === authorizedInitials) {
+            const authorizedInitials = ['H H'];
+            if (currentUser && authorizedInitials.includes(userInitials)) {
                 analyticsSection.style.display = 'block';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
             }
@@ -670,16 +670,11 @@
         const yearly = { byType: {}, byCategory: {} };
         const yearlySummary = {};
 
-        const normalizeAmount = (s) => {
-            if (typeof s !== 'string') return NaN;
-            return parseFloat(s.replace(/\./g, '').replace(',', '.'));
-        }
-
         dataRows.forEach(row => {
             const date = parseDate(row[0]);
             if (!date) return;
 
-            const amount = normalizeAmount(row[1]);
+            const amount = parseFloat(String(row[1]).replace(',', '.'));
             if (isNaN(amount)) return;
 
             const category = row[2] || 'N/A';
