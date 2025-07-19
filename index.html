@@ -674,7 +674,7 @@
 
             // Analytics Section
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
-            const authorizedInitials = ['H H'];
+            const authorizedInitials = ['H H', 'G B'];
             if (currentUser && authorizedInitials.includes(userInitials)) {
                 analyticsBtn.style.display = 'block';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
