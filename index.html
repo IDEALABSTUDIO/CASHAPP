@@ -620,13 +620,13 @@
     window.loadSheetData = async function() {
         const tableContent = document.getElementById('table-content');
         const analyticsSection = document.getElementById('analytics-section');
-        const analyticsBtn = document.getElementById('show-analytics-btn');
+        const analyticsBtnContainer = document.querySelector('.analytics-btn-container');
 
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'block';
         tableContent.style.display = 'block';
         analyticsSection.style.display = 'none';
-        analyticsBtn.style.display = 'none';
+        analyticsBtnContainer.style.display = 'none';
 
         const storicoBox = document.getElementById('storico-popup-content');
         storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
@@ -676,7 +676,7 @@
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
             const authorizedInitials = ['H H'];
             if (currentUser && authorizedInitials.includes(userInitials)) {
-                analyticsBtn.style.display = 'block';
+                analyticsBtnContainer.style.display = 'flex';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
             }
 
