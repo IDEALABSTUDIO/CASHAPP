@@ -85,8 +85,23 @@
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9998; }
         #storico-modal { top: 5%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1200px; height: 90%; background: #1e1e1e; color: white; overflow: auto; padding: 1rem; border-radius: 8px; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        #storico-modal button.close-btn { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; background: #EA4335; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; transition: background 0.3s ease; }
-        #storico-modal button.close-btn:hover { background: #d93325; }
+        #storico-modal button.close-btn-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+        #storico-modal button.close-btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
         #storico-popup-content { margin-top: 3rem; }
         #storico-popup-content h4 { border-bottom: 2px solid #4285F4; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1.2rem; }
         #storico-popup-content table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
@@ -329,7 +344,9 @@
 </div>
 <div id="popup-overlay"></div>
 <div id="storico-modal">
-    <button class="close-btn" onclick="chiudiPopup()">Chiudi</button>
+    <button class="close-btn-icon" onclick="chiudiPopup()" title="Chiudi">
+        <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 0 24 24" width="28px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
     <div id="storico-popup-content"></div>
     <div id="analytics-section" style="display: none;">
         <h3>Analytics Dashboard</h3>
@@ -580,7 +597,7 @@
                 for (let i = 0; i < headers.length; i++) {
                     let cellContent = row[i] || '';
                     if (i === 1) { // Amount column
-                        const amount = parseFloat(cellContent);
+                        const amount = parseFloat(String(cellContent).replace(',', '.'));
                         if (!isNaN(amount)) {
                             cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
                         }
@@ -596,7 +613,7 @@
             const authorizedUsers = ['Holsi Hasanaj'];
             if (currentUser && authorizedUsers.includes(currentUser.displayName)) {
                 analyticsSection.style.display = 'block';
-                renderAnalyticsCharts(dataRows);
+                renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
             }
 
             logBox.textContent = 'Dati caricati con successo.';
@@ -607,16 +624,43 @@
         }
     }
 
-    function renderAnalyticsCharts(dataRows) {
-        const parseDate = (dateString) => {
-            const parts = dateString.split('/');
-            return new Date(parts[2], parts[1] - 1, parts[0]);
-        };
+    function parseDate(dateString) {
+        if (!dateString || typeof dateString !== 'string') return null;
 
+        // Handles DD/MM/YYYY and DD/MM/YY
+        let parts = dateString.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            let year = parseInt(parts[2], 10);
+            
+            if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+            if (year < 100) {
+                year += 2000; // Assumes 21st century for 2-digit years
+            }
+            
+            const date = new Date(year, month, day);
+            // Basic validation to check if the constructed date is valid
+            if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+                return date;
+            }
+        }
+
+        // Fallback for other formats like YYYY-MM-DD
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date;
+        }
+
+        return null;
+    }
+
+    function renderAnalyticsCharts(dataRows) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
+        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Monday as start of week
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfYear = new Date(now.getFullYear(), 0, 1);
 
@@ -626,27 +670,28 @@
         const yearly = {};
 
         dataRows.forEach(row => {
-            try {
-                const date = parseDate(row[0]);
-                const amount = parseFloat(row[1]);
-                const category = row[2] || 'N/A';
+            const date = parseDate(row[0]);
+            if (!date) {
+                console.warn('Formato data non valido, riga saltata:', row);
+                return;
+            }
+            
+            const amount = parseFloat(String(row[1]).replace(',', '.'));
+            const category = row[2] || 'N/A';
 
-                if (isNaN(amount) || amount <= 0) return;
+            if (isNaN(amount) || amount <= 0) return; // Consider only income
 
-                if (date >= today) {
-                    daily[category] = (daily[category] || 0) + amount;
-                }
-                if (date >= startOfWeek) {
-                    weekly[category] = (weekly[category] || 0) + amount;
-                }
-                if (date >= startOfMonth) {
-                    monthly[category] = (monthly[category] || 0) + amount;
-                }
-                if (date >= startOfYear) {
-                    yearly[category] = (yearly[category] || 0) + amount;
-                }
-            } catch (e) {
-                // Ignore rows with invalid data
+            if (date.getTime() >= today.getTime()) {
+                daily[category] = (daily[category] || 0) + amount;
+            }
+            if (date.getTime() >= startOfWeek.getTime()) {
+                weekly[category] = (weekly[category] || 0) + amount;
+            }
+            if (date.getTime() >= startOfMonth.getTime()) {
+                monthly[category] = (monthly[category] || 0) + amount;
+            }
+            if (date.getTime() >= startOfYear.getTime()) {
+                yearly[category] = (yearly[category] || 0) + amount;
             }
         });
 
@@ -662,12 +707,14 @@
         const values = Object.values(data);
 
         const chart = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
-                labels: labels,
+                labels: labels.length > 0 ? labels : ['Nessun dato'],
                 datasets: [{
-                    data: values,
-                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63'],
+                    data: values.length > 0 ? values : [1],
+                    backgroundColor: labels.length > 0 
+                        ? ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63']
+                        : ['#333'],
                     borderColor: '#1e1e1e',
                     borderWidth: 2
                 }]
@@ -684,6 +731,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
+                                if (context.label === 'Nessun dato') return 'Nessun dato';
                                 let label = context.label || '';
                                 if (label) {
                                     label += ': ';
