@@ -282,6 +282,34 @@
         #cancel-logout-btn { background: #555; color: white; }
         #cancel-logout-btn:hover { background: #666; }
 
+        /* Spinner Overlay */
+        #spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10005;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4285F4;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+
         /* --- RESPONSIVE STYLES --- */
         @media (max-width: 1200px) {
             .left { flex-basis: 200px; min-width: 150px; }
@@ -395,6 +423,11 @@
         <button id="cancel-logout-btn">Annulla</button>
     </div>
 </div>
+
+<div id="spinner-overlay">
+    <div class="spinner"></div>
+</div>
+
 <div id="popup-overlay"></div>
 <div id="storico-modal">
     <div id="modal-header">
@@ -651,17 +684,19 @@
 
     window.loadSheetData = async function() {
         showTable(); // Reset to table view first
+        const spinner = document.getElementById('spinner-overlay');
+        spinner.style.display = 'flex'; // Show spinner
 
         const tableContent = document.getElementById('table-content');
         const analyticsSection = document.getElementById('analytics-section');
         const analyticsBtn = document.getElementById('show-analytics-btn');
 
         document.getElementById('popup-overlay').style.display = 'block';
-        document.getElementById('storico-modal').style.display = 'flex'; // Changed to flex
+        document.getElementById('storico-modal').style.display = 'flex';
         analyticsBtn.style.display = 'none';
 
         const storicoBox = document.getElementById('storico-popup-content');
-        storicoBox.innerHTML = '<p>Caricamento in corso...</p>';
+        storicoBox.innerHTML = ''; // Clear previous content
         logBox.textContent = 'Caricamento dati dal foglio Google...';
 
         activeCharts.forEach(chart => chart.destroy());
@@ -706,7 +741,7 @@
 
             // Analytics Section
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
-            const authorizedInitials = ['H H'];
+            const authorizedInitials = ['H H', 'G B'];
             if (currentUser && authorizedInitials.includes(userInitials)) {
                 analyticsBtn.style.display = 'block';
                 renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
@@ -717,6 +752,8 @@
             storicoBox.innerHTML = `<p style="color: #ff6347;">Errore durante il caricamento: ${error.message}</p>`;
             logBox.textContent = `Errore: ${error.message}`;
             console.error("Errore fetch Google Sheets:", error);
+        } finally {
+            spinner.style.display = 'none'; // Hide spinner
         }
     }
 
