@@ -596,17 +596,37 @@
     });
 
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => { // Made async
         if (user) {
             currentUser = user;
+
+            // If user is logged in but we lost the token (e.g., page refresh), try to get a new one silently.
+            if (!oauthAccessToken) {
+                try {
+                    const credential = await auth.currentUser.getIdTokenResult();
+                    // This part is tricky because we need the *OAuth* access token for Sheets API,
+                    // not just the Firebase ID token. The original logic gets this from the popup flow.
+                    // A full silent re-auth for OAuth token is complex and often not possible without a popup.
+                    // For now, we will rely on the user re-initiating the action if the token has expired.
+                    // The `authenticatedFetch` function will handle the re-auth popup when needed.
+                } catch (error) {
+                    console.error("Could not refresh token silently: ", error);
+                    // This might mean the user needs to sign in again.
+                }
+            }
+
             loginScreen.style.display = 'none';
             mainAppContainer.style.display = 'flex';
             userInfoDiv.style.display = 'flex';
             document.getElementById('user-name').textContent = user.displayName;
             document.getElementById('user-avatar').src = user.photoURL;
-            if (!oauthAccessToken) {
-                logBox.textContent = `Bentornato, ${user.displayName}!`;
+            logBox.textContent = `Bentornato, ${user.displayName}!`;
+
+            // Check if the modal should be reopened
+            if (sessionStorage.getItem('isModalOpen') === 'true') {
+                loadSheetData();
             }
+
         } else {
             currentUser = null;
             oauthAccessToken = null;
@@ -614,6 +634,7 @@
             mainAppContainer.style.display = 'none';
             userInfoDiv.style.display = 'none';
             logBox.textContent = 'Effettua il login per iniziare';
+            chiudiPopup(); // Ensure modal is closed on logout
         }
     });
 
@@ -683,6 +704,7 @@
     }
 
     window.loadSheetData = async function() {
+        sessionStorage.setItem('isModalOpen', 'true'); // Set flag when modal opens
         showTable(); // Reset to table view first
         const spinner = document.getElementById('spinner-overlay');
         spinner.style.display = 'flex'; // Show spinner
@@ -968,6 +990,7 @@
     }
 
     window.chiudiPopup = function() {
+        sessionStorage.removeItem('isModalOpen'); // Clear flag when modal closes
         document.getElementById('popup-overlay').style.display = 'none';
         document.getElementById('storico-modal').style.display = 'none';
         activeCharts.forEach(chart => chart.destroy());
