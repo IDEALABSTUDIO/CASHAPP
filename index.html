@@ -85,10 +85,10 @@
         #popup-overlay, #storico-modal { display: none; position: fixed; }
         #popup-overlay { top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10010; }
         #storico-modal {
-            top: 5%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1200px; height: 90%;
-            background: #1e1e1e; color: white; border-radius: 8px; z-index: 10011;
+            top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 1200px; height: 90%;
+            background: #1e1e1e; color: white; border-radius: 12px; z-index: 10011;
             box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            padding: 0; display: flex; flex-direction: column;
+            display: flex; flex-direction: column;
         }
 
         #modal-header {
@@ -109,11 +109,11 @@
             flex-grow: 1;
             margin: 0;
         }
-
+        
         #modal-content-area {
             padding: 1rem;
             overflow-y: auto;
-            height: 100%;
+            flex-grow: 1;
         }
 
         #storico-modal button.close-btn-icon, #storico-modal button.back-btn-icon {
@@ -508,6 +508,7 @@
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 
+    // UI Elements
     const loginScreen = document.getElementById('login-screen');
     const mainAppContainer = document.getElementById('main-app-container');
     const googleLoginBtn = document.getElementById('google-login-btn');
@@ -515,53 +516,104 @@
     const userInfoDiv = document.getElementById('user-info');
     const logoutBtn = document.getElementById('logout-btn');
     const logoutConfirmOverlay = document.getElementById('logout-confirm-overlay');
+    const spinner = document.getElementById('spinner-overlay');
 
+    // State Variables
     let oauthAccessToken = null;
     let currentInput = '';
     let currentUser = null;
     let activeCharts = [];
 
+    // --- CORE FUNCTIONS ---
+
+    function resetInitialUI() {
+        // This function ensures a clean state every time the script loads.
+        document.getElementById('storico-modal').style.display = 'none';
+        document.getElementById('popup-overlay').style.display = 'none';
+        document.getElementById('logout-confirm-overlay').style.display = 'none';
+        document.getElementById('spinner-overlay').style.display = 'none';
+    }
 
     async function reauthenticateAndGetToken() {
+        spinner.style.display = 'flex';
         try {
-            logBox.textContent = 'Sessione scaduta, rinnovo in corso...';
+            logBox.textContent = 'Autorizzazione richiesta...';
             const result = await signInWithPopup(auth, provider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
             if (credential?.accessToken) {
                 oauthAccessToken = credential.accessToken;
-                logBox.textContent = 'Sessione rinnovata.';
+                logBox.textContent = 'Autorizzazione concessa.';
                 return oauthAccessToken;
             }
             throw new Error("Impossibile ottenere un nuovo token di accesso.");
         } catch (error) {
-            logBox.textContent = `Errore di autenticazione: ${error.message}`;
+            logBox.textContent = `Errore di autorizzazione: ${error.message}`;
             oauthAccessToken = null;
             return null;
+        } finally {
+            spinner.style.display = 'none';
         }
     }
 
     async function authenticatedFetch(url, options = {}) {
         if (!oauthAccessToken) {
-            const new_token = await reauthenticateAndGetToken();
-            if (!new_token) throw new Error("Autenticazione richiesta.");
+            console.log("Token di accesso mancante. Richiesta di una nuova autorizzazione.");
+            const newToken = await reauthenticateAndGetToken();
+            if (!newToken) throw new Error("Autorizzazione richiesta e non concessa.");
         }
 
         options.headers = { ...options.headers, 'Authorization': `Bearer ${oauthAccessToken}` };
 
         let response = await fetch(url, options);
 
-        if (response.status === 401) {
-            const new_token = await reauthenticateAndGetToken();
-            if (!new_token) throw new Error("Autenticazione fallita.");
+        if (response.status === 401) { // Token scaduto o non valido
+            console.log("Token scaduto (401). Richiesta di una nuova autorizzazione.");
+            const newToken = await reauthenticateAndGetToken();
+            if (!newToken) throw new Error("Autorizzazione fallita dopo la scadenza del token.");
 
-            options.headers['Authorization'] = `Bearer ${new_token}`;
-            response = await fetch(url, options);
+            options.headers['Authorization'] = `Bearer ${newToken}`;
+            response = await fetch(url, options); // Riprova la chiamata con il nuovo token
         }
         return response;
     }
 
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            // Mostra l'interfaccia principale
+            loginScreen.style.display = 'none';
+            mainAppContainer.style.display = 'flex';
+            userInfoDiv.style.display = 'flex';
+            document.getElementById('user-name').textContent = user.displayName;
+            document.getElementById('user-avatar').src = user.photoURL;
+
+            // Se l'utente è loggato ma non abbiamo il token per Sheets (es. dopo un refresh),
+            // lo informiamo. La prossima azione richiederà l'autorizzazione.
+            if (!oauthAccessToken) {
+                logBox.textContent = `Bentornato, ${user.displayName}! L'autorizzazione per Google Sheets potrebbe essere richiesta.`;
+            }
+
+        } else { // Utente non loggato
+            currentUser = null;
+            oauthAccessToken = null;
+            // Mostra la schermata di login e nasconde tutto il resto
+            loginScreen.style.display = 'flex';
+            mainAppContainer.style.display = 'none';
+            userInfoDiv.style.display = 'none';
+            logBox.textContent = 'Effettua il login per iniziare';
+            resetInitialUI(); // Assicura che anche le modali siano chiuse al logout
+        }
+    });
+
+    // --- UI & EVENT LISTENERS ---
+
+    document.addEventListener("DOMContentLoaded", () => {
+        resetInitialUI(); // Assicura lo stato pulito al caricamento iniziale
+        setupUI();
+    });
 
     googleLoginBtn.addEventListener('click', async () => {
+        spinner.style.display = 'flex';
         try {
             const result = await signInWithPopup(auth, provider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -574,77 +626,24 @@
                 alert('Accesso non autorizzato. Questo account non è registrato per usare l\'applicazione.');
                 oauthAccessToken = null;
             } else if (credential?.accessToken) {
-                oauthAccessToken = credential.accessToken;
+                oauthAccessToken = credential.accessToken; // Token ottenuto con successo!
             }
         } catch(error) {
             logBox.textContent = `Errore di login: ${error.message}`;
             console.error("Errore di login Google:", error);
+        } finally {
+            spinner.style.display = 'none';
         }
     });
 
     logoutBtn.addEventListener('click', () => {
         logoutConfirmOverlay.style.display = 'flex';
     });
-
     document.getElementById('confirm-logout-btn').addEventListener('click', () => {
-        signOut(auth);
-        logoutConfirmOverlay.style.display = 'none';
+        signOut(auth); // Questo triggererà onAuthStateChanged
     });
-
     document.getElementById('cancel-logout-btn').addEventListener('click', () => {
         logoutConfirmOverlay.style.display = 'none';
-    });
-
-
-    onAuthStateChanged(auth, async (user) => { // Made async
-        if (user) {
-            currentUser = user;
-
-            // If user is logged in but we lost the token (e.g., page refresh), try to get a new one silently.
-            if (!oauthAccessToken) {
-                try {
-                    const credential = await auth.currentUser.getIdTokenResult();
-                    // This part is tricky because we need the *OAuth* access token for Sheets API,
-                    // not just the Firebase ID token. The original logic gets this from the popup flow.
-                    // A full silent re-auth for OAuth token is complex and often not possible without a popup.
-                    // For now, we will rely on the user re-initiating the action if the token has expired.
-                    // The `authenticatedFetch` function will handle the re-auth popup when needed.
-                } catch (error) {
-                    console.error("Could not refresh token silently: ", error);
-                    // This might mean the user needs to sign in again.
-                }
-            }
-
-            loginScreen.style.display = 'none';
-            mainAppContainer.style.display = 'flex';
-            userInfoDiv.style.display = 'flex';
-            document.getElementById('user-name').textContent = user.displayName;
-            document.getElementById('user-avatar').src = user.photoURL;
-            logBox.textContent = `Bentornato, ${user.displayName}!`;
-
-        } else {
-            currentUser = null;
-            oauthAccessToken = null;
-            loginScreen.style.display = 'flex';
-            mainAppContainer.style.display = 'none';
-            userInfoDiv.style.display = 'none';
-            logBox.textContent = 'Effettua il login per iniziare';
-            chiudiPopup(); // Ensure modal is closed on logout
-        }
-    });
-
-    function safeEval(expression) {
-        if (!expression) return null;
-        try {
-            const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
-            return new Function('return ' + evalExpression)();
-        } catch (e) {
-            return 'Error';
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        setupUI();
     });
 
     function setupUI() {
@@ -663,53 +662,85 @@
         });
 
         const display = document.getElementById('display');
-
         document.querySelectorAll('.keypad .key').forEach(key => {
             key.addEventListener('click', () => {
                 const value = key.getAttribute('data-value');
-
-                if (key.id === 'clear') {
-                    currentInput = '';
-                } else if (key.id === 'equals') {
-                    try {
-                        const result = safeEval(currentInput);
-                        if (result !== null && result !== 'Error') {
-                            currentInput = String(result);
-                        } else {
-                            currentInput = 'Error';
-                        }
-                    } catch (e) {
-                        currentInput = 'Error';
-                    }
-                } else {
-                    currentInput += value;
-                }
-
+                if (key.id === 'clear') { currentInput = ''; }
+                else if (key.id === 'equals') {
+                    const result = safeEval(currentInput);
+                    currentInput = (result !== null && result !== 'Error') ? String(result) : 'Error';
+                } else { currentInput += value; }
                 display.value = currentInput.replace(/\*/g, '×').replace(/\//g, '÷');
             });
         });
-
-        document.getElementById('show-analytics-btn').addEventListener('click', () => showAnalytics());
+        document.getElementById('show-analytics-btn').addEventListener('click', showAnalytics);
     }
 
-    function normalizeAmount(s) {
-        if (typeof s !== 'string') return NaN;
-        const cleanedString = s.replace(/€/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
-        return parseFloat(cleanedString);
+    // --- MAIN APP LOGIC ---
+
+    window.register = async function(type) {
+        spinner.style.display = 'flex';
+        const resultMessageBox = document.getElementById('result-message');
+        const note = document.getElementById('note').value.trim();
+        const categoryBtn = document.querySelector('.category.active');
+
+        let amount;
+        try {
+            amount = safeEval(currentInput);
+            if (amount === null || typeof amount !== 'number' || !isFinite(amount)) throw new Error("Risultato non valido.");
+        } catch (e) {
+            resultMessageBox.innerText = 'Errore: Espressione non valida.';
+            resultMessageBox.style.color = '#EA4335';
+            spinner.style.display = 'none';
+            return;
+        }
+
+        if (!categoryBtn) { resultMessageBox.innerText = 'Errore: Seleziona una categoria.'; resultMessageBox.style.color = '#EA4335'; spinner.style.display = 'none'; return; }
+        const category = categoryBtn.textContent;
+        if (category === 'CUSTOM' && note === '') { resultMessageBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultMessageBox.style.color = '#EA4335'; spinner.style.display = 'none'; return; }
+
+        const now = new Date();
+        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
+        const newRow = [dateString, finalAmount, category, type, note];
+
+        const appendRange = 'Foglio1';
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
+        const body = JSON.stringify({ values: [newRow] });
+        logBox.textContent = "Registrazione in corso...";
+        try {
+            const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
+            
+            logBox.textContent = `Movimento registrato con successo!`;
+            resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
+            resultMessageBox.style.color = '#34A853';
+
+            document.getElementById('display').value = '';
+            currentInput = '';
+            document.getElementById('note').value = '';
+            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
+            setTimeout(() => { resultMessageBox.innerHTML = ''; }, 4000);
+
+        } catch (error) {
+            logBox.textContent = `Errore nella registrazione: ${error.message}`;
+            resultMessageBox.innerText = 'Errore di registrazione.';
+            resultMessageBox.style.color = '#EA4335';
+            console.error("Errore durante l'aggiunta della riga: ", error);
+        } finally {
+            spinner.style.display = 'none';
+        }
     }
+
+    // --- MODAL & CHARTS LOGIC ---
 
     window.loadSheetData = async function() {
         showTable(); // Reset to table view first
-        const spinner = document.getElementById('spinner-overlay');
-        spinner.style.display = 'flex'; // Show spinner
-
-        const tableContent = document.getElementById('table-content');
-        const analyticsSection = document.getElementById('analytics-section');
-        const analyticsBtn = document.getElementById('show-analytics-btn');
+        spinner.style.display = 'flex';
 
         document.getElementById('popup-overlay').style.display = 'block';
         document.getElementById('storico-modal').style.display = 'flex';
-        analyticsBtn.style.display = 'none';
+        document.getElementById('show-analytics-btn').style.display = 'none';
 
         const storicoBox = document.getElementById('storico-popup-content');
         storicoBox.innerHTML = ''; // Clear previous content
@@ -721,10 +752,7 @@
         const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`;
         try {
             const response = await authenticatedFetch(apiUrl);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Errore API Google: ${errorData.error.message}`);
-            }
+            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
             const data = await response.json();
             const rows = data.values;
             if (!rows || rows.length < 2) {
@@ -735,7 +763,6 @@
             const headers = rows[0];
             const dataRows = rows.slice(1).reverse(); // Newest first
 
-            // Display last 10 transactions
             const recentTransactions = dataRows.slice(0, 10);
             let html = `<h4>Ultime 10 Transazioni</h4><table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
             recentTransactions.forEach(row => {
@@ -744,9 +771,7 @@
                     let cellContent = row[i] || '';
                     if (i === 1) { // Amount column
                         const amount = normalizeAmount(cellContent);
-                        if (!isNaN(amount)) {
-                            cellContent = amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
-                        }
+                        cellContent = !isNaN(amount) ? amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' }) : cellContent;
                     }
                     rowHTML += `<td>${cellContent}</td>`;
                 }
@@ -755,12 +780,11 @@
             html += '</tbody></table>';
             storicoBox.innerHTML = html;
 
-            // Analytics Section
             const userInitials = currentUser ? currentUser.displayName.split(' ').map(n => n[0]).join(' ').toUpperCase() : '';
             const authorizedInitials = ['H H', 'G B'];
             if (currentUser && authorizedInitials.includes(userInitials)) {
-                analyticsBtn.style.display = 'block';
-                renderAnalyticsCharts(rows.slice(1)); // Pass all data rows for analytics
+                document.getElementById('show-analytics-btn').style.display = 'block';
+                renderAnalyticsCharts(rows.slice(1));
             }
 
             logBox.textContent = 'Dati caricati con successo.';
@@ -769,29 +793,49 @@
             logBox.textContent = `Errore: ${error.message}`;
             console.error("Errore fetch Google Sheets:", error);
         } finally {
-            spinner.style.display = 'none'; // Hide spinner
+            spinner.style.display = 'none';
         }
     }
-
-    function parseDate(dateString) {
-        if (!dateString || typeof dateString !== 'string') return null;
-        let parts = dateString.split('/');
-        if (parts.length === 3) {
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            let year = parseInt(parts[2], 10);
-            if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-            if (year < 100) year += 2000;
-            const date = new Date(year, month, day);
-            if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
-                return date;
-            }
-        }
-        const date = new Date(dateString);
-        return !isNaN(date.getTime()) ? date : null;
+    
+    window.showAnalytics = function() {
+        document.getElementById('table-content').style.display = 'none';
+        document.getElementById('analytics-section').style.display = 'block';
+        document.getElementById('modal-title').textContent = 'Analytics Dashboard';
+        document.querySelector('#modal-header .back-btn-icon').style.visibility = 'visible';
     }
 
+    window.showTable = function() {
+        document.getElementById('analytics-section').style.display = 'none';
+        document.getElementById('table-content').style.display = 'block';
+        document.getElementById('modal-title').textContent = 'Storico Transazioni';
+        document.querySelector('#modal-header .back-btn-icon').style.visibility = 'hidden';
+    }
+
+    window.chiudiPopup = function() {
+        document.getElementById('popup-overlay').style.display = 'none';
+        document.getElementById('storico-modal').style.display = 'none';
+        activeCharts.forEach(chart => chart.destroy());
+        activeCharts = [];
+    }
+    
+    // --- UTILITY & PARSING FUNCTIONS ---
+
+    function normalizeAmount(s) {
+        if (typeof s !== 'string') return NaN;
+        const cleanedString = s.replace(/€/g, '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleanedString);
+    }
+
+    function safeEval(expression) {
+        if (!expression) return null;
+        try {
+            const evalExpression = expression.replace(/×/g, '*').replace(/÷/g, '/');
+            return new Function('return ' + evalExpression)();
+        } catch (e) { return 'Error'; }
+    }
+    
     function renderAnalyticsCharts(dataRows) {
+        // ... (chart rendering logic is complex but correct, no changes needed here) ...
         const now = new Date();
         const todayStr = now.toDateString();
         const currentMonth = now.getMonth();
@@ -805,20 +849,15 @@
         dataRows.forEach(row => {
             const date = parseDate(row[0]);
             if (!date) return;
-
             const amount = normalizeAmount(row[1]);
             if (isNaN(amount)) return;
-
             const category = row[2] || 'N/A';
             const type = row[3] || 'N/A';
             const year = date.getFullYear();
 
             if (!yearlySummary[year]) yearlySummary[year] = { income: 0, expense: 0 };
-            if (amount > 0) {
-                yearlySummary[year].income += amount;
-            } else {
-                yearlySummary[year].expense += Math.abs(amount);
-            }
+            if (amount > 0) { yearlySummary[year].income += amount; }
+            else { yearlySummary[year].expense += Math.abs(amount); }
 
             if (date.toDateString() === todayStr) {
                 daily.byType[type] = (daily.byType[type] || 0) + amount;
@@ -842,22 +881,32 @@
         createDoughnutChart('yearly-type-chart', yearly.byType);
         createYearlySummaryChart('yearly-summary-chart', yearlySummary);
     }
-
+    
+    function parseDate(dateString) {
+        if (!dateString || typeof dateString !== 'string') return null;
+        let parts = dateString.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            let year = parseInt(parts[2], 10);
+            if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+            if (year < 100) year += 2000;
+            const date = new Date(year, month, day);
+            if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) return date;
+        }
+        const date = new Date(dateString);
+        return !isNaN(date.getTime()) ? date : null;
+    }
+    
     function createDoughnutChart(canvasId, data) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const labels = Object.keys(data);
         const values = Object.values(data);
-
         const chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: labels.length > 0 ? labels : ['Nessun dato'],
-                datasets: [{
-                    data: values.length > 0 ? values : [1],
-                    backgroundColor: labels.length > 0 ? ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63'] : ['#333'],
-                    borderColor: '#1e1e1e',
-                    borderWidth: 2
-                }]
+                datasets: [{ data: values.length > 0 ? values : [1], backgroundColor: labels.length > 0 ? ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#673AB7', '#2196F3', '#FFC107', '#00BCD4', '#E91E63'] : ['#333'], borderColor: '#1e1e1e', borderWidth: 2 }]
             },
             options: {
                 responsive: true,
@@ -865,13 +914,7 @@
                     legend: { position: 'top', labels: { color: '#fff' } },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                if (context.label === 'Nessun dato') return 'Nessun dato';
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed !== null) label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed);
-                                return label;
-                            }
+                            label: (c) => c.label === 'Nessun dato' ? c.label : `${c.label}: ${new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(c.parsed)}`
                         }
                     }
                 }
@@ -879,13 +922,12 @@
         });
         activeCharts.push(chart);
     }
-
+    
     function createYearlySummaryChart(canvasId, data) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const sortedYears = Object.keys(data).sort();
         const incomeData = sortedYears.map(year => data[year].income);
         const expenseData = sortedYears.map(year => data[year].expense);
-
         const chart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -897,20 +939,12 @@
             },
             options: {
                 responsive: true,
-                scales: {
-                    y: { beginAtZero: true, ticks: { color: '#fff' } },
-                    x: { ticks: { color: '#fff' } }
-                },
+                scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
                 plugins: {
                     legend: { position: 'top', labels: { color: '#fff' } },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed.y !== null) label += new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
-                                return label;
-                            }
+                            label: (c) => `${c.dataset.label}: ${new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(c.parsed.y)}`
                         }
                     }
                 }
@@ -919,76 +953,6 @@
         activeCharts.push(chart);
     }
 
-    window.register = async function(type) {
-        const resultMessageBox = document.getElementById('result-message');
-        const note = document.getElementById('note').value.trim();
-        const categoryBtn = document.querySelector('.category.active');
-
-        let amount;
-        try {
-            amount = safeEval(currentInput);
-            if (amount === null || typeof amount !== 'number' || !isFinite(amount)) {
-                throw new Error("Risultato non valido.");
-            }
-        } catch (e) {
-            resultMessageBox.innerText = 'Errore: Espressione non valida.';
-            resultMessageBox.style.color = '#EA4335';
-            return;
-        }
-
-        if (!categoryBtn) { resultMessageBox.innerText = 'Errore: Seleziona una categoria.'; resultMessageBox.style.color = '#EA4335'; return; }
-        const category = categoryBtn.textContent;
-        if (category === 'CUSTOM' && note === '') { resultMessageBox.innerText = 'Errore: Devi inserire una nota per la categoria CUSTOM.'; resultMessageBox.style.color = '#EA4335'; return; }
-
-        const now = new Date();
-        const dateString = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-        const finalAmount = type === 'USCITE' ? -Math.abs(amount) : amount;
-        const newRow = [dateString, finalAmount, category, type, note];
-        const appendRange = 'Foglio1';
-        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${appendRange}:append?valueInputOption=USER_ENTERED`;
-        const body = JSON.stringify({ values: [newRow] });
-        logBox.textContent = "Registrazione in corso...";
-        try {
-            const response = await authenticatedFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(`Errore API Google: ${errorData.error.message}`); }
-            logBox.textContent = `Movimento registrato con successo!`;
-            resultMessageBox.innerText = `Registrato: ${finalAmount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} - ${type} - ${category}`;
-            resultMessageBox.style.color = '#34A853';
-
-            document.getElementById('display').value = '';
-            currentInput = '';
-            document.getElementById('note').value = '';
-            document.querySelectorAll('.category.active').forEach(el => el.classList.remove('active'));
-            setTimeout(() => { resultMessageBox.innerHTML = ''; }, 3000);
-
-        } catch (error) {
-            logBox.textContent = `Errore nella registrazione: ${error.message}`;
-            resultMessageBox.innerText = 'Errore di registrazione.';
-            resultMessageBox.style.color = '#EA4335';
-            console.error("Errore durante l'aggiunta della riga: ", error);
-        }
-    }
-
-    window.showAnalytics = function() {
-        document.getElementById('table-content').style.display = 'none';
-        document.getElementById('analytics-section').style.display = 'block';
-        document.getElementById('modal-title').textContent = 'Analytics Dashboard';
-        document.querySelector('#modal-header .back-btn-icon').style.visibility = 'visible';
-    }
-
-    window.showTable = function() {
-        document.getElementById('analytics-section').style.display = 'none';
-        document.getElementById('table-content').style.display = 'block';
-        document.getElementById('modal-title').textContent = 'Storico Transazioni';
-        document.querySelector('#modal-header .back-btn-icon').style.visibility = 'hidden';
-    }
-
-    window.chiudiPopup = function() {
-        document.getElementById('popup-overlay').style.display = 'none';
-        document.getElementById('storico-modal').style.display = 'none';
-        activeCharts.forEach(chart => chart.destroy());
-        activeCharts = [];
-    }
 </script>
 </body>
 </html>
