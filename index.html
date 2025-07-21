@@ -622,11 +622,6 @@
             document.getElementById('user-avatar').src = user.photoURL;
             logBox.textContent = `Bentornato, ${user.displayName}!`;
 
-            // Check if the modal should be reopened
-            if (sessionStorage.getItem('isModalOpen') === 'true') {
-                loadSheetData();
-            }
-
         } else {
             currentUser = null;
             oauthAccessToken = null;
