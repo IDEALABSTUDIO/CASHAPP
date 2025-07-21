@@ -699,7 +699,6 @@
     }
 
     window.loadSheetData = async function() {
-        sessionStorage.setItem('isModalOpen', 'true'); // Set flag when modal opens
         showTable(); // Reset to table view first
         const spinner = document.getElementById('spinner-overlay');
         spinner.style.display = 'flex'; // Show spinner
@@ -985,7 +984,6 @@
     }
 
     window.chiudiPopup = function() {
-        sessionStorage.removeItem('isModalOpen'); // Clear flag when modal closes
         document.getElementById('popup-overlay').style.display = 'none';
         document.getElementById('storico-modal').style.display = 'none';
         activeCharts.forEach(chart => chart.destroy());
